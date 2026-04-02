@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Профиль — IT Helpdesk{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h2 class="mb-0">Мой профиль</h2>
+    {% if current_user.is_superadmin %}
+    <span class="badge badge-super px-3 py-2">Super-админ</span>
+    {% elif current_user.is_admin %}
+    <span class="badge badge-admin px-3 py-2">IT-админ</span>
+    {% else %}
+    <span class="badge badge-employee px-3 py-2">Сотрудник</span>
+    {% endif %}
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card p-4 text-center">
+            <div class="profile-avatar mx-auto mb-3">{{ current_user.display_name[0]|upper }}</div>
+            <h5 class="fw-semibold mb-1">{{ current_user.display_name }}</h5>
+            <div class="text-muted small mb-2">@{{ current_user.username }}</div>
+            {% if current_user.department %}
+            <div class="text-muted small">{{ current_user.department }}</div>
+            {% endif %}
+            {% if current_user.is_from_ad %}
+            <div class="mt-2">
+                <span class="badge bg-info text-dark small">Из Active Directory</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card p-4 mt-3">
+            <h6 class="fw-semibold mb-3 text-muted text-uppercase" style="font-size:11px; letter-spacing:0.5px;">
+                Статистика</h6>
+            <div class="d-flex justify-content-between py-2 border-bottom-subtle">
+                <span class="text-muted small">Всего заявок</span>
+                <span class="fw-semibold">{{ current_user.submitted_tickets|length }}</span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom-subtle">
+                <span class="text-muted small">Задач в списке</span>
+                <span class="fw-semibold">{{ current_user.todos|length }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card p-4">
+            <h5 class="fw-semibold mb-4">Редактировать данные</h5>
+            <form method="post">
+                {{ form.hidden_tag() }}
+                <div class="row g-3">
+                    <div class="col-12">
+                        {{ form.full_name.label(class="form-label") }}
+                        {{ form.full_name(class="form-control") }}
+                        {% if form.full_name.errors %}
+                        <div class="form-text text-danger">{{ form.full_name.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-12 col-md-6">
+                        {{ form.department.label(class="form-label") }}
+                        {{ form.department(class="form-control") }}
+                    </div>
+                    <div class="col-12 col-md-6">
+                        {{ form.email.label(class="form-label") }}
+                        {{ form.email(class="form-control") }}
+                    </div>
+                    <div class="col-12 col-md-6">
+                        {{ form.phone.label(class="form-label") }}
+                        {{ form.phone(class="form-control phone-mask", placeholder="10-10", maxlength="5") }}
+                        <div class="form-text">Стационарный номер вашего рабочего места</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        {{ form.computer_name.label(class="form-label") }}
+                        {{ form.computer_name(class="form-control", placeholder="00zu") }}
+                        <div class="form-text">Подставляется автоматически в заявки</div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+                <h6 class="fw-semibold mb-3">Смена пароля</h6>
+                {% if current_user.is_from_ad %}
+                <div class="alert alert-info py-2 small">
+                    Ваша учётная запись синхронизирована из Active Directory.<br>
+                    Для смены пароля обратитесь к системному администратору.
+                </div>
+                {% else %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Новый пароль</label>
+                        {{ form.password(class="form-control") }}
+                        <div class="form-text small opacity-75">Оставьте пустым, чтобы не менять</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Повторите новый пароль</label>
+                        {{ form.password2(class="form-control") }}
+                        {% if form.password2.errors %}
+                        <div class="form-text text-danger">{{ form.password2.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="mt-4">
+                    {{ form.submit(class="btn btn-save") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Active Directory — IT Helpdesk{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="mb-0">Active Directory</h2>
+        <p class="text-muted small mb-0">Синхронизация пользователей из корпоративного каталога</p>
+    </div>
+    <span class="badge {{ 'bg-success' if settings.is_active else 'bg-secondary' }} px-3 py-2">
+        {{ 'Активно' if settings.is_active else 'Выключено' }}
+    </span>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card p-4">
+            <h5 class="fw-semibold mb-4">Настройки подключения</h5>
+            <form method="post" action="{{ url_for('ad_settings') }}">
+                {{ form.hidden_tag() }}
+                <div class="row g-3">
+                    <div class="col-12">
+                        {{ form.server.label(class="form-label") }}
+                        {{ form.server(class="form-control", placeholder="ldap://dc.company.local или ldaps://dc.company.local:636") }}
+                    </div>
+                    <div class="col-12">
+                        {{ form.base_dn.label(class="form-label") }}
+                        {{ form.base_dn(class="form-control", placeholder="DC=company,DC=local") }}
+                    </div>
+                    <div class="col-12">
+                        {{ form.bind_user.label(class="form-label") }}
+                        {{ form.bind_user(class="form-control", placeholder="CN=ldap_reader,OU=ServiceAccounts,DC=company,DC=local") }}
+                        <div class="form-text">Учётная запись с правами на чтение каталога</div>
+                    </div>
+                    <div class="col-12">
+                        {{ form.bind_password.label(class="form-label") }}
+                        {{ form.bind_password(class="form-control", placeholder="Оставьте пустым, чтобы не менять") }}
+                    </div>
+                    <div class="col-12">
+                        {{ form.search_filter.label(class="form-label") }}
+                        {{ form.search_filter(class="form-control font-monospace small") }}
+                        <div class="form-text">LDAP-фильтр для выбора пользователей. Текущий фильтр исключает отключённые аккаунты AD.</div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check form-switch">
+                            {{ form.is_active(class="form-check-input") }}
+                            {{ form.is_active.label(class="form-check-label") }}
+                        </div>
+                        <div class="form-text">Если включено — пользователи из AD будут входить по своему AD-паролю (LDAP-аутентификация)</div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-4">
+                    {{ form.submit(class="btn btn-save") }}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card p-4">
+            <h6 class="fw-semibold mb-3">Действия</h6>
+            <div class="d-flex flex-column gap-3">
+                <div>
+                    <p class="text-muted small mb-2">Проверить подключение к AD-серверу</p>
+                    <form method="post" action="{{ url_for('ad_test') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            🔌 Проверить подключение
+                        </button>
+                    </form>
+                </div>
+                <hr class="my-1">
+                <div>
+                    <p class="text-muted small mb-2">Синхронизировать пользователей из AD. Новые пользователи будут созданы с ролью «Сотрудник».</p>
+                    <form method="post" action="{{ url_for('ad_sync') }}"
+                        onsubmit="return confirm('Запустить синхронизацию пользователей из Active Directory?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-create w-100">
+                            🔄 Синхронизировать пользователей
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-4 mt-3">
+            <h6 class="fw-semibold mb-3">Справка</h6>
+            <ul class="text-muted small mb-0 ps-3">
+                <li class="mb-2">При синхронизации берутся: ФИО, логин, отдел, телефон, email</li>
+                <li class="mb-2">Существующие пользователи обновляются, не пересоздаются</li>
+                <li class="mb-2">Отключённые в AD пользователи деактивируются в системе</li>
+                <li class="mb-2">Роли пользователей при синхронизации не сбрасываются</li>
+                <li>Для LDAPS используйте порт 636</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Вход — IT Helpdesk{% endblock %}
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="auth-logo">🖥️</div>
+        <h1 class="auth-title">IT Helpdesk</h1>
+        <p class="auth-subtitle">Войдите в систему</p>
+
+        <form method="post" class="auth-form">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.username.label(class="form-label") }}
+                {{ form.username(class="form-control", placeholder="Введите логин", autofocus=True) }}
+            </div>
+            <div class="mb-4">
+                {{ form.password.label(class="form-label") }}
+                {{ form.password(class="form-control", placeholder="Введите пароль") }}
+            </div>
+            {{ form.submit(class="btn btn-create w-100 btn-lg") }}
+        </form>
+
+        <div class="auth-footer">
+            Нет учётной записи?
+            <a href="{{ url_for('register') }}">Зарегистрироваться</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Мои задачи — IT Helpdesk{% endblock %}
+{% block content %}
+
+<h2 class="mb-2">Мои задачи</h2>
+<div class="mb-4">
+    <a href="{{ url_for('new_todo') }}" class="btn btn-create">+ Новая задача</a>
+</div>
+
+<!-- Фильтр -->
+<div class="d-flex gap-2 mb-4">
+    <a href="{{ url_for('todos') }}" class="btn btn-sm {{ 'btn-primary' if not status_filter else 'btn-outline-secondary' }}">
+        Все
+    </a>
+    <a href="{{ url_for('todos', status='pending') }}" class="btn btn-sm {{ 'btn-primary' if status_filter == 'pending' else 'btn-outline-secondary' }}">
+        Активные
+    </a>
+    <a href="{{ url_for('todos', status='done') }}" class="btn btn-sm {{ 'btn-primary' if status_filter == 'done' else 'btn-outline-secondary' }}">
+        Выполненные
+    </a>
+</div>
+
+{% if todos %}
+<div class="card">
+    {% for todo in todos %}
+    <div class="d-flex align-items-center justify-content-between px-4 py-3 mac-list-item {{ 'opacity-60' if todo.done }}">
+        <div class="d-flex align-items-center gap-3 flex-grow-1">
+            <a href="{{ url_for('toggle_todo', todo_id=todo.id) }}" class="todo-checkbox {{ 'done' if todo.done }}" title="{{ 'Отметить не выполненным' if todo.done else 'Отметить выполненным' }}">
+                {{ '✓' if todo.done else '' }}
+            </a>
+            <div>
+                <div class="{{ 'text-decoration-line-through text-muted' if todo.done else '' }}">{{ todo.description }}</div>
+                <div class="text-muted small mt-1">{{ todo.created_at.strftime("%d.%m.%Y %H:%M") }}</div>
+            </div>
+        </div>
+        <div class="btn-group ms-3">
+            <a href="{{ url_for('edit_todo', todo_id=todo.id) }}" class="btn btn-sm btn-edit px-3">✏️</a>
+            <a href="{{ url_for('delete_todo', todo_id=todo.id) }}" class="btn btn-sm btn-delete px-3"
+                onclick="return confirm('Удалить задачу?');">🗑</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card p-5 text-center">
+    <div class="fs-1 mb-3 opacity-50">✅</div>
+    <h5>Задач нет</h5>
+    <p class="text-muted mb-4">Добавьте задачи в личный список дел</p>
+    <div>
+        <a href="{{ url_for('new_todo') }}" class="btn btn-create">Добавить задачу</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

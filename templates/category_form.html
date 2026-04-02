@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Редактирование категории' if edit else 'Новая категория' }} — IT Helpdesk{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h2 class="mb-0">{{ 'Редактирование категории' if edit else 'Новая категория' }}</h2>
+    <a href="{{ url_for('categories') }}" class="btn btn-sm btn-back">← Назад</a>
+</div>
+
+<div class="card p-4" style="max-width:520px;">
+    <form method="post">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control", placeholder="Например: Ремонт ПК") }}
+            {% if form.name.errors %}
+            <div class="form-text text-danger">{{ form.name.errors[0] }}</div>
+            {% endif %}
+        </div>
+        <div class="mb-4">
+            {{ form.assignee_id.label(class="form-label") }}
+            {{ form.assignee_id(class="form-select") }}
+            <div class="form-text">Этот IT-сотрудник будет автоматически назначен на новые заявки данной категории</div>
+        </div>
+        <div class="d-flex gap-2">
+            {{ form.submit(class="btn btn-save") }}
+            <a href="{{ url_for('categories') }}" class="btn btn-back">Отмена</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

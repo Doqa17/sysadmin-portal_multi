@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Категории — IT Helpdesk{% endblock %}
+{% block content %}
+<h2 class="mb-2">Категории заявок</h2>
+<div class="mb-4">
+    <a href="{{ url_for('new_category') }}" class="btn btn-create">+ Добавить</a>
+</div>
+
+<div class="card">
+    {% for cat in categories %}
+    <div class="d-flex align-items-center justify-content-between px-4 py-3 mac-list-item">
+        <div>
+            <div class="fw-semibold">{{ cat.name }}</div>
+            <div class="text-muted small mt-1">
+                Ответственный:
+                {% if cat.assignee %}
+                <span class="badge bg-primary-subtle text-primary">🔧 {{ cat.assignee.display_name }}</span>
+                {% else %}
+                <span class="text-muted">не назначен</span>
+                {% endif %}
+                &nbsp;·&nbsp; Заявок: {{ cat.tickets|length }}
+            </div>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('edit_category', category_id=cat.id) }}" class="btn btn-sm btn-edit px-3">✏️</a>
+            <a href="{{ url_for('delete_category', category_id=cat.id) }}" class="btn btn-sm btn-delete px-3"
+                onclick="return confirm('Удалить категорию «{{ cat.name }}»?');">🗑</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center p-5 text-muted">Нет категорий</div>
+    {% endfor %}
+</div>
+{% endblock %}

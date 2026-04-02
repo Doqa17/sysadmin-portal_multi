@@ -1,0 +1,7 @@
+flask
+flask-login
+flask-sqlalchemy
+flask-wtf
+werkzeug
+ldap3
+email-validator

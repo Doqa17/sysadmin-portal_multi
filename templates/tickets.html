@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Заявки — IT Helpdesk{% endblock %}
+{% block content %}
+
+<h2 class="mb-2">{% if current_user.is_admin %}Все заявки{% else %}Мои заявки{% endif %}</h2>
+<div class="mb-4">
+    <a class="btn btn-create" href="{{ url_for('new_ticket') }}">+ Новая заявка</a>
+</div>
+
+<!-- Фильтры -->
+<form method="get" class="card p-3 mb-4 border-0 shadow-sm filter-container" id="filterForm">
+    <input type="hidden" name="status" id="statusInput" value="{{ current_status or '' }}">
+    <input type="hidden" name="category" id="categoryInput" value="{{ current_category or '' }}">
+    {% if current_user.is_admin %}
+    <input type="hidden" name="assignee" id="assigneeInput" value="{{ current_assignee or '' }}">
+    {% endif %}
+
+    <div class="row g-2 align-items-center">
+        <div class="col-12 col-md-5">
+            <div class="input-group">
+                <input type="text" name="search" class="form-control" placeholder="Поиск по заявкам..."
+                    value="{{ search_query or '' }}">
+                <button type="submit" class="btn btn-primary px-4">🔍</button>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-2">
+            <div class="dropdown w-100">
+                <button class="form-select text-start" type="button" data-bs-toggle="dropdown">
+                    {{ current_status or 'Все статусы' }}
+                </button>
+                <ul class="dropdown-menu shadow border-0 rounded-4 py-1" style="width:100%">
+                    <li><a class="dropdown-item rounded-3 mx-1" href="#"
+                        onclick="setFilter('statusInput',''); return false;">Все статусы</a></li>
+                    {% for status in statuses %}
+                    <li><a class="dropdown-item rounded-3 mx-1" href="#"
+                        onclick="setFilter('statusInput','{{ status.name }}'); return false;">
+                        <span class="badge status-badge-{{ status.color }} me-1">{{ status.name }}</span>
+                    </a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-2">
+            <div class="dropdown w-100">
+                <button class="form-select text-start" type="button" data-bs-toggle="dropdown">
+                    {% if current_category %}
+                        {% for c in categories %}{% if c.id == current_category %}{{ c.name }}{% endif %}{% endfor %}
+                    {% else %}Все категории{% endif %}
+                </button>
+                <ul class="dropdown-menu shadow border-0 rounded-4 py-1" style="width:100%">
+                    <li><a class="dropdown-item rounded-3 mx-1" href="#"
+                        onclick="setFilter('categoryInput',''); return false;">Все категории</a></li>
+                    {% for cat in categories %}
+                    <li><a class="dropdown-item rounded-3 mx-1" href="#"
+                        onclick="setFilter('categoryInput','{{ cat.id }}'); return false;">{{ cat.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        {% if current_user.is_admin %}
+        <div class="col-6 col-md-2">
+            <div class="dropdown w-100">
+                <button class="form-select text-start" type="button" data-bs-toggle="dropdown">
+                    {% if current_assignee %}
+                        {% for u in it_staff %}{% if u.id == current_assignee %}{{ u.display_name }}{% endif %}{% endfor %}
+                    {% else %}Все исполнители{% endif %}
+                </button>
+                <ul class="dropdown-menu shadow border-0 rounded-4 py-1" style="width:100%">
+                    <li><a class="dropdown-item rounded-3 mx-1" href="#"
+                        onclick="setFilter('assigneeInput',''); return false;">Все исполнители</a></li>
+                    {% for u in it_staff %}
+                    <li><a class="dropdown-item rounded-3 mx-1" href="#"
+                        onclick="setFilter('assigneeInput','{{ u.id }}'); return false;">{{ u.display_name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if current_status or search_query or current_category or current_assignee %}
+        <div class="col-auto">
+            <a href="{{ url_for('tickets') }}" class="btn btn-outline-secondary btn-sm">✕ Сбросить</a>
+        </div>
+        {% endif %}
+    </div>
+</form>
+
+<!-- Список заявок -->
+<div class="card border-0 shadow-sm" style="border-radius:16px;">
+    <div class="d-flex flex-column">
+        {% for ticket in tickets %}
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 py-3 px-4 mac-list-item">
+            <div class="flex-grow-1 min-width-0">
+                <a href="{{ url_for('view_ticket', ticket_id=ticket.id) }}"
+                   class="text-decoration-none fs-6 fw-medium mb-1 d-block text-body">
+                    #{{ ticket.id }} — {{ ticket.description[:80] }}{% if ticket.description|length > 80 %}…{% endif %}
+                </a>
+                <div class="d-flex flex-wrap gap-3 text-muted small mt-1 align-items-center">
+                    <span>👤 {{ ticket.author.display_name }}</span>
+                    {% if ticket.category %}
+                    <span>📂 {{ ticket.category.name }}</span>
+                    {% endif %}
+                    {% if current_user.is_admin and ticket.assignee %}
+                    <span>🔧 {{ ticket.assignee.display_name }}</span>
+                    {% endif %}
+                    {% if ticket.contact_phone %}
+                    <span>📞 {{ ticket.contact_phone }}</span>
+                    {% endif %}
+                    {% if ticket.contact_computer %}
+                    <span>💻 {{ ticket.contact_computer }}</span>
+                    {% endif %}
+                    <span>📅 {{ ticket.created_at.strftime("%d.%m.%Y %H:%M") }}</span>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                {% if current_user.is_admin %}
+                <div class="dropdown">
+                    <button class="btn btn-sm status-badge-{{ ticket.status_obj.color }} border-0 dropdown-toggle px-3"
+                        type="button" data-bs-toggle="dropdown">
+                        {{ ticket.status_obj.name }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4">
+                        {% for status in statuses %}
+                        <li><a class="dropdown-item rounded-3 mx-1" style="width:auto;"
+                            href="{{ url_for('set_ticket_status', ticket_id=ticket.id, status_id=status.id) }}">
+                            <span class="badge status-badge-{{ status.color }} me-1">{{ status.name }}</span>
+                        </a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('edit_ticket', ticket_id=ticket.id) }}" class="btn btn-sm btn-edit px-3" title="Редактировать">✏️</a>
+                    <a href="{{ url_for('delete_ticket', ticket_id=ticket.id) }}" class="btn btn-sm btn-delete px-3"
+                        onclick="return confirm('Удалить заявку #{{ ticket.id }}?');" title="Удалить">🗑</a>
+                </div>
+                {% else %}
+                <span class="badge status-badge-{{ ticket.status_obj.color }} px-3 py-2">{{ ticket.status_obj.name }}</span>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center p-5 text-muted">
+            <div class="fs-1 mb-3 opacity-50">📭</div>
+            <h5>Заявок не найдено</h5>
+            <p>Попробуйте изменить параметры поиска или <a href="{{ url_for('new_ticket') }}">создайте новую заявку</a>.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function setFilter(inputId, value) {
+    document.getElementById(inputId).value = value;
+    document.getElementById('filterForm').submit();
+}
+</script>
+{% endblock %}

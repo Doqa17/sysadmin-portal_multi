@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}Главная — IT Helpdesk{% endblock %}
+{% block content %}
+
+{% if current_user.is_admin %}
+<!-- ========== ADMIN DASHBOARD ========== -->
+<h2 class="mb-2">Панель управления</h2>
+<p class="text-muted small mb-4">Добро пожаловать, {{ current_user.display_name }}</p>
+<div class="mb-4">
+    <a href="{{ url_for('new_ticket') }}" class="btn btn-create">+ Создать заявку</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card stat-card hover-lift">
+            <div class="stat-icon" style="background: rgba(59,130,246,0.15); color:#3b82f6;">🎫</div>
+            <div class="stat-value">{{ total_tickets }}</div>
+            <div class="stat-label">Всего заявок</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card hover-lift">
+            <div class="stat-icon" style="background: rgba(245,158,11,0.15); color:#f59e0b;">⏳</div>
+            <div class="stat-value">{{ open_tickets }}</div>
+            <div class="stat-label">Открытых</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card hover-lift">
+            <div class="stat-icon" style="background: rgba(34,197,94,0.15); color:#22c55e;">✅</div>
+            <div class="stat-value">{{ resolved_tickets }}</div>
+            <div class="stat-label">Решено</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card hover-lift">
+            <div class="stat-icon" style="background: rgba(139,92,246,0.15); color:#8b5cf6;">📚</div>
+            <div class="stat-value">{{ articles_count }}</div>
+            <div class="stat-label">Статей</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card p-4 d-flex flex-column" style="height: 400px;">
+            <h6 class="fw-semibold mb-3">Среднее кол-во заявок по дням недели</h6>
+            <div class="flex-grow-1" style="position: relative; min-height: 0;">
+                <canvas id="ticketsChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card p-4 d-flex flex-column" style="height: 400px;">
+            <h6 class="fw-semibold mb-3">Быстрые действия</h6>
+            <div class="d-flex flex-column gap-2 overflow-auto">
+                <a href="{{ url_for('tickets') }}" class="quick-action-btn">
+                    <span>📋</span> Все заявки
+                </a>
+                <a href="{{ url_for('new_ticket') }}" class="quick-action-btn">
+                    <span>➕</span> Новая заявка
+                </a>
+                <a href="{{ url_for('articles') }}" class="quick-action-btn">
+                    <span>📚</span> База знаний
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="quick-action-btn">
+                    <span>👥</span> Пользователи
+                </a>
+                <a href="{{ url_for('categories') }}" class="quick-action-btn">
+                    <span>📂</span> Категории
+                </a>
+                <a href="{{ url_for('ad_settings') }}" class="quick-action-btn">
+                    <span>🔗</span> Active Directory
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if recent_tickets %}
+<div class="card">
+    <div class="card-body p-0">
+        <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom-subtle">
+            <h6 class="fw-semibold mb-0">Последние заявки</h6>
+            <a href="{{ url_for('tickets') }}" class="btn btn-sm btn-outline-primary">Все →</a>
+        </div>
+        {% for ticket in recent_tickets %}
+        <div class="d-flex align-items-center justify-content-between px-4 py-3 mac-list-item">
+            <div>
+                <a href="{{ url_for('view_ticket', ticket_id=ticket.id) }}"
+                    class="fw-medium text-body text-decoration-none">
+                    {{ ticket.description[:70] }}{% if ticket.description|length > 70 %}…{% endif %}
+                </a>
+                <div class="text-muted small mt-1">
+                    👤 {{ ticket.author.display_name }} &nbsp;·&nbsp;
+                    📂 {{ ticket.category.name if ticket.category else '—' }} &nbsp;·&nbsp;
+                    📅 {{ ticket.created_at.strftime("%d.%m.%Y") }}
+                </div>
+            </div>
+            <span class="badge status-badge-{{ ticket.status_obj.color }} ms-3">{{ ticket.status_obj.name }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<!-- ========== EMPLOYEE DASHBOARD ========== -->
+<h2 class="mb-2">Привет, {{ current_user.display_name.split()[0] if current_user.display_name else current_user.username
+    }}! 👋</h2>
+<p class="text-muted small mb-4">{{ current_user.department or 'Система заявок IT-отдела' }}</p>
+<div class="mb-4">
+    <a href="{{ url_for('new_ticket') }}" class="btn btn-create">+ Подать заявку</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4">
+        <div class="card stat-card hover-lift">
+            <div class="stat-icon" style="background: rgba(59,130,246,0.15); color:#3b82f6;">🎫</div>
+            <div class="stat-value">{{ my_total }}</div>
+            <div class="stat-label">Мои заявки</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="card stat-card hover-lift">
+            <div class="stat-icon" style="background: rgba(245,158,11,0.15); color:#f59e0b;">⏳</div>
+            <div class="stat-value">{{ my_open }}</div>
+            <div class="stat-label">В обработке</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="card stat-card hover-lift">
+            <div class="stat-icon" style="background: rgba(139,92,246,0.15); color:#8b5cf6;">✏️</div>
+            <div class="stat-value">{{ my_todos_pending }}</div>
+            <div class="stat-label">Задач в списке</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        {% if my_tickets %}
+        <div class="card">
+            <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom-subtle">
+                <h6 class="fw-semibold mb-0">Последние мои заявки</h6>
+                <a href="{{ url_for('tickets') }}" class="btn btn-sm btn-outline-primary">Все →</a>
+            </div>
+            {% for ticket in my_tickets %}
+            <div class="d-flex align-items-center justify-content-between px-4 py-3 mac-list-item">
+                <div>
+                    <a href="{{ url_for('view_ticket', ticket_id=ticket.id) }}"
+                        class="fw-medium text-body text-decoration-none">
+                        {{ ticket.description[:60] }}{% if ticket.description|length > 60 %}…{% endif %}
+                    </a>
+                    <div class="text-muted small mt-1">
+                        📂 {{ ticket.category.name if ticket.category else '—' }} &nbsp;·&nbsp;
+                        📅 {{ ticket.created_at.strftime("%d.%m.%Y") }}
+                    </div>
+                </div>
+                <span class="badge status-badge-{{ ticket.status_obj.color }} ms-3">{{ ticket.status_obj.name }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card p-5 text-center">
+            <div class="fs-1 mb-3 opacity-50">📭</div>
+            <h5>Заявок пока нет</h5>
+            <p class="text-muted mb-4">Если у вас возникла проблема с техникой — подайте заявку в IT-отдел</p>
+            <div>
+                <a href="{{ url_for('new_ticket') }}" class="btn btn-create">Подать первую заявку</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card p-4">
+            <h6 class="fw-semibold mb-3">Что я могу сделать?</h6>
+            <div class="d-flex flex-column gap-2">
+                <a href="{{ url_for('new_ticket') }}" class="quick-action-btn">
+                    <span>➕</span> Подать заявку
+                </a>
+                <a href="{{ url_for('tickets') }}" class="quick-action-btn">
+                    <span>📋</span> Мои заявки
+                </a>
+                <a href="{{ url_for('articles') }}" class="quick-action-btn">
+                    <span>📚</span> База знаний
+                </a>
+                <a href="{{ url_for('todos') }}" class="quick-action-btn">
+                    <span>✏️</span> Мои задачи
+                </a>
+                <a href="{{ url_for('profile') }}" class="quick-action-btn">
+                    <span>⚙️</span> Профиль
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if current_user.is_admin %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('ticketsChart').getContext('2d');
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_labels | tojson }},
+        datasets: [{
+            label: 'Среднее число заявок',
+            data: {{ chart_data | tojson }},
+        backgroundColor: 'rgba(59, 130, 246, 0.6)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 0,
+        borderRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

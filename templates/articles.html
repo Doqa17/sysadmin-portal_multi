@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-2">База знаний</h2>
+<div class="mb-4">
+    <a class="btn btn-create" href="{{ url_for('new_article') }}">+ Новая статья</a>
+</div>
+
+<form method="get" class="card p-3 mb-4 border-0 shadow-sm filter-container" id="filterForm">
+    <input type="hidden" name="category" id="categoryInput" value="{{ selected_category or '' }}">
+
+    <div class="row g-2 align-items-center">
+        <!-- Строка поиска -->
+        <div class="col-12 col-md-7 col-lg-8">
+            <div class="input-group shadow-sm" style="border-radius: 10px;">
+                <input type="text" name="search" class="form-control" placeholder="Поиск по статьям..."
+                    value="{{ search_query or '' }}">
+                <button type="submit" class="btn btn-primary px-4 fw-medium">🔍 Найти</button>
+            </div>
+        </div>
+
+        <!-- Фильтр по категории -->
+        <div class="col-12 col-md-5 col-lg-4">
+            <div class="dropdown">
+                <button class="form-select shadow-sm text-start" type="button" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    Категория:
+                    {% set found = namespace(name='Все') %}
+                    {% for c in categories %}
+                    {% if c.id == selected_category %}
+                    {% set found.name = c.name %}
+                    {% endif %}
+                    {% endfor %}
+                    {{ found.name }}
+                </button>
+                <ul class="dropdown-menu shadow-lg rounded-4 border-0 py-2" style="width: 100%;">
+                    <li><a class="dropdown-item rounded-3 mx-1" style="width: auto;" href="#"
+                            onclick="document.getElementById('categoryInput').value=''; document.getElementById('filterForm').submit(); return false;">Все
+                            категории</a></li>
+                    {% for category in categories %}
+                    <li><a class="dropdown-item rounded-3 mx-1" style="width: auto;" href="#"
+                            onclick="document.getElementById('categoryInput').value='{{ category.id }}'; document.getElementById('filterForm').submit(); return false;">{{
+                            category.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</form>
+
+
+<div class="row">
+    {% for article in articles %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            {% if article.image %}
+            <img src="{{ url_for('static', filename='uploads/' ~ article.image) }}" class="card-img-top"
+                style="max-height: 200px; object-fit: cover;">
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">
+                    <a href="{{ url_for('view_article', article_id=article.id) }}">{{ article.title }}</a>
+                </h5>
+                <p class="card-text"><strong>Категория:</strong> {{ article.category.name if article.category else "—"
+                    }}</p>
+                <p class="card-text">{{ article.problem[:50] }}...</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

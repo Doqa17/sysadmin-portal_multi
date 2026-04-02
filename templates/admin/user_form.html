@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Редактирование' if edit else 'Новый пользователь' }} — IT Helpdesk{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h2 class="mb-0">{{ 'Редактирование пользователя' if edit else 'Новый пользователь' }}</h2>
+    <a href="{{ url_for('admin_users') }}" class="btn btn-sm btn-back">← Назад</a>
+</div>
+
+<div class="card p-4" style="max-width:600px;">
+    <form method="post">
+        {{ form.hidden_tag() }}
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                {{ form.username.label(class="form-label") }}
+                {{ form.username(class="form-control") }}
+                {% if form.username.errors %}<div class="form-text text-danger">{{ form.username.errors[0] }}</div>{% endif %}
+            </div>
+            <div class="col-12 col-md-6">
+                {{ form.full_name.label(class="form-label") }}
+                {{ form.full_name(class="form-control", placeholder="Иванов Иван Иванович") }}
+            </div>
+            <div class="col-12 col-md-6">
+                {{ form.role.label(class="form-label") }}
+                {{ form.role(class="form-select") }}
+            </div>
+            <div class="col-12 col-md-6">
+                {{ form.department.label(class="form-label") }}
+                {{ form.department(class="form-control", placeholder="Бухгалтерия") }}
+            </div>
+            <div class="col-12 col-md-6">
+                {{ form.phone.label(class="form-label") }}
+                {{ form.phone(class="form-control phone-mask", placeholder="10-10", maxlength="5") }}
+            </div>
+            <div class="col-12 col-md-6">
+                {{ form.computer_name.label(class="form-label") }}
+                {{ form.computer_name(class="form-control", placeholder="00zu") }}
+            </div>
+            <div class="col-12">
+                {{ form.email.label(class="form-label") }}
+                {{ form.email(class="form-control") }}
+            </div>
+            <div class="col-12">
+                {{ form.password.label(class="form-label") }}
+                {{ form.password(class="form-control") }}
+                {% if edit %}
+                <div class="form-text">Оставьте пустым, чтобы не менять пароль.</div>
+                <div class="form-text text-info small">💡 Смена пароля переключит пользователя на локальную авторизацию (отключит AD).</div>
+                {% endif %}
+                {% if form.password.errors %}<div class="form-text text-danger">{{ form.password.errors[0] }}</div>{% endif %}
+            </div>
+            <div class="col-12 d-flex gap-4">
+                <div class="form-check">
+                    {{ form.is_active(class="form-check-input") }}
+                    {{ form.is_active.label(class="form-check-label") }}
+                </div>
+                <div class="form-check">
+                    {{ form.is_from_ad(class="form-check-input") }}
+                    {{ form.is_from_ad.label(class="form-check-label") }}
+                </div>
+            </div>
+        </div>
+        <div class="d-flex gap-2 mt-4">
+            {{ form.submit(class="btn btn-save") }}
+            <a href="{{ url_for('admin_users') }}" class="btn btn-back">Отмена</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

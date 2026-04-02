@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} — База знаний{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="mb-0">{{ article.title }}</h2>
+        <div class="text-muted small mt-1">{{ article.created_at.strftime('%d.%m.%Y в %H:%M') if article.created_at else '' }}</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('edit_article', article_id=article.id) }}" class="btn btn-sm btn-edit">✏️ Редактировать</a>
+        <a href="{{ url_for('delete_article', article_id=article.id) }}" class="btn btn-sm btn-delete" onclick="return confirm('Удалить статью?');">🗑 Удалить</a>
+        <a href="{{ url_for('articles') }}" class="btn btn-sm btn-back">← Назад</a>
+    </div>
+</div>
+
+<div class="card p-4 mb-3">
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <div class="small text-muted mb-1">Категория</div>
+            <div class="fw-semibold">{{ article.category.name if article.category else '—' }}</div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="small text-muted mb-1">Автор</div>
+            <div class="fw-semibold">{{ article.author.display_name if article.author else '—' }}</div>
+        </div>
+    </div>
+</div>
+
+{% if article.images %}
+<div class="card p-4 mb-3">
+    <div class="row mb-4">
+        {% for img in article.images %}
+        <div class="col-md-3 mb-3">
+            <a href="#" data-bs-toggle="modal" data-bs-target="#lightboxModal" data-img="{{ url_for('static', filename='uploads/' ~ img.filename) }}">
+                <img src="{{ url_for('static', filename='uploads/' ~ img.filename) }}" class="img-fluid rounded shadow-sm" style="max-height: 180px; object-fit: cover;">
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="card p-4 mb-3">
+    <div class="small text-muted fw-semibold mb-2 text-uppercase" style="letter-spacing:0.5px;">📋 Проблема</div>
+    <div style="white-space: pre-wrap; line-height:1.6;">{{ article.problem }}</div>
+</div>
+
+<div class="card p-4 mb-3">
+    <div class="small text-muted fw-semibold mb-2 text-uppercase" style="letter-spacing:0.5px;">✅ Решение</div>
+    <div style="white-space: pre-wrap; line-height:1.6;">{{ article.solution }}</div>
+</div>
+
+<!-- Lightbox Modal -->
+<div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-transparent border-0">
+      <div class="modal-body p-0">
+        <img src="" id="lightboxImage" class="img-fluid">
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var lightboxModal = document.getElementById('lightboxModal');
+    lightboxModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var src = button.getAttribute('data-img');
+        document.getElementById('lightboxImage').src = src;
+    });
+});
+</script>
+{% endblock %}

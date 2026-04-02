@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Регистрация — IT Helpdesk{% endblock %}
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card" style="max-width: 480px;">
+        <div class="auth-logo">👤</div>
+        <h1 class="auth-title">Регистрация</h1>
+        <p class="auth-subtitle">Создайте учётную запись сотрудника</p>
+
+        <form method="post" class="auth-form">
+            {{ form.hidden_tag() }}
+            <div class="row g-3">
+                <div class="col-12">
+                    {{ form.full_name.label(class="form-label") }}
+                    {{ form.full_name(class="form-control", placeholder="Иванов Иван Иванович") }}
+                    {% if form.full_name.errors %}
+                    <div class="form-text text-danger">{{ form.full_name.errors[0] }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-12 col-md-6">
+                    {{ form.username.label(class="form-label") }}
+                    {{ form.username(class="form-control", placeholder="ivanov") }}
+                    {% if form.username.errors %}
+                    <div class="form-text text-danger">{{ form.username.errors[0] }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-12 col-md-6">
+                    {{ form.department.label(class="form-label") }}
+                    {{ form.department(class="form-control", placeholder="Бухгалтерия") }}
+                </div>
+                <div class="col-12 col-md-6">
+                    {{ form.phone.label(class="form-label") }}
+                    {{ form.phone(class="form-control phone-mask", placeholder="10-10", maxlength="5") }}
+                </div>
+                <div class="col-12 col-md-6">
+                    {{ form.computer_name.label(class="form-label") }}
+                    {{ form.computer_name(class="form-control", placeholder="00zu") }}
+                </div>
+
+                <div class="col-12 col-md-6">
+                    {{ form.password.label(class="form-label") }}
+                    {{ form.password(class="form-control") }}
+                    {% if form.password.errors %}
+                    <div class="form-text text-danger">{{ form.password.errors[0] }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-12 col-md-6">
+                    {{ form.password2.label(class="form-label") }}
+                    {{ form.password2(class="form-control") }}
+                    {% if form.password2.errors %}
+                    <div class="form-text text-danger">{{ form.password2.errors[0] }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="mt-4">
+                {{ form.submit(class="btn btn-create w-100 btn-lg") }}
+            </div>
+        </form>
+
+        <div class="auth-footer">
+            Уже есть учётная запись?
+            <a href="{{ url_for('login') }}">Войти</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

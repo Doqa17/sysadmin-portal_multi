@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h2 class="mb-0">{{ "Редактирование статьи" if edit else "Новая статья" }}</h2>
+    <a href="{{ url_for('articles') }}" class="btn btn-sm btn-back">← Назад</a>
+</div>
+
+<div class="card p-4">
+    <form method="post" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <div class="row g-3">
+            <div class="col-md-9">
+                {{ form.title.label(class="form-label") }}
+                {{ form.title(class="form-control", placeholder="Введите заголовок статьи...") }}
+            </div>
+            <div class="col-md-3">
+                {{ form.category.label(class="form-label") }}
+                {{ form.category(class="form-select") }}
+            </div>
+            
+            <div class="col-12">
+                {{ form.problem.label(class="form-label") }}
+                {{ form.problem(class="form-control", rows=4, placeholder="Опишите проблему или симптомы...") }}
+            </div>
+
+            <div class="col-12">
+                {{ form.solution.label(class="form-label") }}
+                {{ form.solution(class="form-control", rows=8, placeholder="Опишите решение по шагам...") }}
+            </div>
+
+            <div class="col-12">
+                {{ form.images.label(class="form-label") }}
+                {{ form.images(class="form-control", multiple=true) }}
+                <div class="form-text">Вы можете выбрать несколько изображений сразу</div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+            {{ form.submit(class="btn btn-save", value="Сохранить изменения" if edit else "Сохранить") }}
+            <a href="{{ url_for('articles') }}" class="btn btn-back">Отмена</a>
+        </div>
+    </form>
+</div>
+
+{% if edit and article.images %}
+<h5 class="mt-4">Текущие изображения</h5>
+<div class="row" id="image-gallery">
+    {% for img in article.images %}
+    <div class="col-md-3 mb-2 text-center image-container" data-image-id="{{ img.id }}">
+        <img src="{{ url_for('static', filename='uploads/' ~ img.filename) }}" 
+             class="img-thumbnail" style="width: 100%; cursor: pointer;" 
+             data-bs-toggle="modal" data-bs-target="#lightboxModal" 
+             data-img="{{ url_for('static', filename='uploads/' ~ img.filename) }}">
+        <button type="button" class="btn btn-delete">🗑</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Lightbox Modal -->
+<div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-transparent border-0">
+      <div class="modal-body p-0">
+        <img src="" id="lightboxImage" class="img-fluid">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Lightbox
+    var lightboxModal = document.getElementById('lightboxModal');
+    lightboxModal.addEventListener('show.bs.modal', function (event) {
+        var img = event.relatedTarget;
+        var src = img.getAttribute('data-img');
+        document.getElementById('lightboxImage').src = src;
+    });
+
+    // Удаление изображений на фронтенде
+    document.querySelectorAll('.remove-image-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const container = btn.closest('.image-container');
+            container.style.display = 'none'; // скрываем изображение
+            container.dataset.deleted = 'true'; // помечаем как удалённое
+        });
+    });
+
+    // Добавляем скрытые поля для удаления при отправке формы
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function() {
+        document.querySelectorAll('.image-container[data-deleted="true"]').forEach(container => {
+            const id = container.dataset.imageId;
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'deleted_images';
+            input.value = id;
+            form.appendChild(input);
+        });
+    });
+});
+</script>
+
+{% endblock %}

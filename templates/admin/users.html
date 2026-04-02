@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Пользователи — IT Helpdesk{% endblock %}
+{% block content %}
+<h2 class="mb-2">Пользователи системы</h2>
+<div class="mb-4">
+    <a href="{{ url_for('admin_new_user') }}" class="btn btn-create">+ Добавить</a>
+</div>
+
+<!-- Поиск и фильтр -->
+<form method="get" class="card p-3 mb-4 border-0 shadow-sm filter-container">
+    <div class="row g-2">
+        <div class="col-12 col-md-6">
+            <div class="input-group">
+                <input type="text" name="search" class="form-control" placeholder="Поиск по имени, логину, отделу..."
+                    value="{{ search }}">
+                <button type="submit" class="btn btn-primary">🔍</button>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <select name="role" class="form-select" onchange="this.form.submit()">
+                <option value="">Все роли</option>
+                <option value="employee" {% if role_filter == 'employee' %}selected{% endif %}>Сотрудники</option>
+                <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>IT-администраторы</option>
+            </select>
+        </div>
+        {% if search or role_filter %}
+        <div class="col-auto">
+            <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary">✕ Сбросить</a>
+        </div>
+        {% endif %}
+    </div>
+</form>
+
+<div class="card">
+    <div class="d-flex align-items-center justify-content-between px-4 py-2 border-bottom-subtle">
+        <span class="text-muted small">Найдено: {{ users|length }} пользователей</span>
+    </div>
+    {% for user in users %}
+    <div class="d-flex align-items-center justify-content-between px-4 py-3 mac-list-item">
+        <div class="d-flex align-items-center gap-3">
+            <div class="user-avatar-sm">{{ (user.display_name[0])|upper }}</div>
+            <div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fw-semibold">{{ user.display_name }}</span>
+                    {% if user.role == "superadmin" %}
+                    <span class="badge badge-super">Super</span>
+                    {% elif user.role == "admin" %}
+                    <span class="badge badge-admin">IT</span>
+                    {% else %}
+                    <span class="badge badge-employee">Сотрудник</span>
+                    {% endif %}
+                    {% if user.is_from_ad %}
+                    <span class="badge bg-info-subtle text-info small">AD</span>
+                    {% endif %}
+                    {% if not user.is_active %}
+                    <span class="badge bg-danger-subtle text-danger small">Заблокирован</span>
+                    {% endif %}
+                </div>
+                <div class="text-muted small mt-1">
+                    @{{ user.username }}
+                    {% if user.department %}&nbsp;·&nbsp; {{ user.department }}{% endif %}
+                    {% if user.email %}&nbsp;·&nbsp; {{ user.email }}{% endif %}
+                </div>
+                <div class="text-muted small">
+                    {% if user.phone %}📞 {{ user.phone }}{% endif %}
+                    {% if user.computer_name %}&nbsp; 💻 {{ user.computer_name }}{% endif %}
+                    &nbsp;·&nbsp; Заявок: {{ user.submitted_tickets|length }}
+                </div>
+            </div>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('admin_edit_user', user_id=user.id) }}" class="btn btn-sm btn-edit px-3">✏️</a>
+            {% if user.id != current_user.id %}
+            <a href="{{ url_for('admin_delete_user', user_id=user.id) }}" class="btn btn-sm btn-delete px-3"
+                onclick="return confirm('Удалить пользователя {{ user.username }}?');">🗑</a>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center p-5 text-muted">Пользователи не найдены</div>
+    {% endfor %}
+</div>
+{% endblock %}

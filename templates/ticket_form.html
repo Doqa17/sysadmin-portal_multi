@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Редактирование' if edit else 'Новая заявка' }} — IT Helpdesk{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h2 class="mb-0">{{ 'Редактирование заявки' if edit else 'Новая заявка' }}</h2>
+    <a href="{{ url_for('tickets') }}" class="btn btn-sm btn-back">← Назад</a>
+</div>
+
+<div class="card p-4">
+    <form method="post">
+        {{ form.hidden_tag() }}
+        <div class="row g-3">
+
+            {% if is_admin_form %}
+            <!-- ADMIN FORM -->
+            <div class="col-12 col-md-6">
+                {{ form.category_id.label(class="form-label") }}
+                {{ form.category_id(class="form-select", id="cat-select") }}
+            </div>
+            <div class="col-12 col-md-6">
+                {{ form.assignee_id.label(class="form-label") }}
+                {{ form.assignee_id(class="form-select") }}
+            </div>
+            <div class="col-12 col-md-4">
+                {{ form.status_id.label(class="form-label") }}
+                {{ form.status_id(class="form-select") }}
+            </div>
+            <div class="col-12 col-md-4">
+                {{ form.contact_phone.label(class="form-label") }}
+                {{ form.contact_phone(class="form-control phone-mask", placeholder="10-10", maxlength="5") }}
+            </div>
+            <div class="col-12 col-md-4">
+                {{ form.contact_computer.label(class="form-label") }}
+                {{ form.contact_computer(class="form-control", placeholder="00zu") }}
+            </div>
+            <div class="col-12">
+                {{ form.description.label(class="form-label") }}
+                {{ form.description(class="form-control", rows=6) }}
+            </div>
+            <div class="col-12">
+                {{ form.resolution.label(class="form-label") }}
+                {{ form.resolution(class="form-control", rows=4) }}
+            </div>
+            <div class="col-12">
+                {{ form.article_id.label(class="form-label") }}
+                {{ form.article_id(class="form-select") }}
+            </div>
+
+            {% else %}
+            <!-- EMPLOYEE FORM -->
+            <div class="col-12">
+                <div class="alert alert-info py-2 small">
+                    💡 Ваша заявка будет автоматически направлена ответственному специалисту IT-отдела.
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                {{ form.category_id.label(class="form-label") }}
+                {{ form.category_id(class="form-select") }}
+                <div class="form-text">Выберите наиболее подходящую категорию</div>
+            </div>
+            <div class="col-12 col-md-3">
+                {{ form.contact_phone.label(class="form-label") }}
+                {{ form.contact_phone(class="form-control phone-mask", placeholder="10-10", maxlength="5") }}
+                <div class="form-text">Ваш стационарный телефон</div>
+            </div>
+            <div class="col-12 col-md-3">
+                {{ form.contact_computer.label(class="form-label") }}
+                {{ form.contact_computer(class="form-control", placeholder="00zu") }}
+                <div class="form-text">Имя вашего ПК (например, 00zu)</div>
+            </div>
+            <div class="col-12">
+                {{ form.description.label(class="form-label") }}
+                {{ form.description(class="form-control", rows=8,
+                    placeholder="Опишите проблему подробно: что произошло, когда началось, что вы уже пробовали сделать...") }}
+                {% if form.description.errors %}
+                <div class="form-text text-danger">{{ form.description.errors[0] }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+            {{ form.submit(class="btn btn-save") }}
+            <a href="{{ url_for('tickets') }}" class="btn btn-back">Отмена</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

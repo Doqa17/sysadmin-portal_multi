@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Редактирование статуса' if edit else 'Новый статус' }} — IT Helpdesk{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h2 class="mb-0">{{ 'Редактирование статуса' if edit else 'Новый статус' }}</h2>
+    <a href="{{ url_for('statuses') }}" class="btn btn-sm btn-back">← Назад</a>
+</div>
+
+<div class="card p-4" style="max-width:420px;">
+    <form method="post">
+        {% if not edit %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+        <div class="mb-3">
+            <label class="form-label">Название статуса</label>
+            <input type="text" name="name" class="form-control" value="{{ status.name if status else '' }}"
+                placeholder="Например: На согласовании" required>
+        </div>
+        <div class="mb-4">
+            <label class="form-label">Цвет</label>
+            <select name="color" class="form-select">
+                {% set current_color = status.color if status else 'secondary' %}
+                <option value="primary" {% if current_color=='primary' %}selected{% endif %}>🔵 Синий (Новая)</option>
+                <option value="warning" {% if current_color=='warning' %}selected{% endif %}>🟡 Жёлтый (В работе)
+                </option>
+                <option value="success" {% if current_color=='success' %}selected{% endif %}>🟢 Зелёный (Решено)
+                </option>
+                <option value="danger" {% if current_color=='danger' %}selected{% endif %}>🔴 Красный (Срочно)</option>
+                <option value="secondary" {% if current_color=='secondary' %}selected{% endif %}>⚪ Серый (Отложено)
+                </option>
+                <option value="info" {% if current_color=='info' %}selected{% endif %}>🩵 Голубой</option>
+            </select>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-save">Сохранить</button>
+            <a href="{{ url_for('statuses') }}" class="btn btn-back">Отмена</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

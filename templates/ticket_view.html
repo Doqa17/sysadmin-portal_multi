@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Заявка #{{ ticket.id }} — IT Helpdesk{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="mb-0">Заявка #{{ ticket.id }}</h2>
+        <div class="text-muted small mt-1">Создана {{ ticket.created_at.strftime("%d.%m.%Y в %H:%M") }}</div>
+    </div>
+    <div class="d-flex gap-2">
+        {% if current_user.is_admin %}
+        <a href="{{ url_for('edit_ticket', ticket_id=ticket.id) }}" class="btn btn-sm btn-edit">✏️ Редактировать</a>
+        <a href="{{ url_for('delete_ticket', ticket_id=ticket.id) }}" class="btn btn-sm btn-delete"
+            onclick="return confirm('Удалить заявку?');">🗑 Удалить</a>
+        {% endif %}
+        <a href="{{ url_for('tickets') }}" class="btn btn-sm btn-back">← Назад</a>
+    </div>
+</div>
+
+<!-- Статус и управление -->
+<div class="card p-4 mb-3 card-status-header">
+    <div class="row g-3">
+        <div class="col-6 col-md-3">
+            <div class="small text-muted mb-1">Статус</div>
+            {% if current_user.is_admin %}
+            <div class="dropdown">
+                <button class="btn btn-sm status-badge-{{ ticket.status_obj.color }} border-0 dropdown-toggle"
+                    type="button" data-bs-toggle="dropdown">
+                    {{ ticket.status_obj.name }}
+                </button>
+                <ul class="dropdown-menu shadow border-0 rounded-4">
+                    {% for status in statuses %}
+                    <li><a class="dropdown-item rounded-3 mx-1" style="width:auto;"
+                        href="{{ url_for('set_ticket_status', ticket_id=ticket.id, status_id=status.id) }}">
+                        <span class="badge status-badge-{{ status.color }} me-1">{{ status.name }}</span>
+                    </a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% else %}
+            <span class="badge status-badge-{{ ticket.status_obj.color }} px-3 py-2">{{ ticket.status_obj.name }}</span>
+            {% endif %}
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="small text-muted mb-1">Категория</div>
+            <div class="fw-semibold">{{ ticket.category.name if ticket.category else '—' }}</div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="small text-muted mb-1">Заявитель</div>
+            <div class="fw-semibold">{{ ticket.author.display_name }}</div>
+            {% if ticket.author.department %}
+            <div class="small text-muted">{{ ticket.author.department }}</div>
+            {% endif %}
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="small text-muted mb-1">Исполнитель</div>
+            <div class="fw-semibold">{{ ticket.assignee.display_name if ticket.assignee else '— не назначено —' }}</div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="small text-muted mb-1">Телефон</div>
+            <div class="fw-semibold">{{ ticket.contact_phone or '—' }}</div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="small text-muted mb-1">Компьютер</div>
+            <div class="fw-semibold">{{ ticket.contact_computer or '—' }}</div>
+        </div>
+        {% if ticket.article %}
+        <div class="col-12 col-md-6">
+            <div class="small text-muted mb-1">Связанная статья</div>
+            <div class="fw-semibold">
+                <a href="{{ url_for('view_article', article_id=ticket.article.id) }}">{{ ticket.article.title }}</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Описание -->
+<div class="card p-4 mb-3">
+    <div class="small text-muted fw-semibold mb-2 text-uppercase" style="letter-spacing:0.5px;">📋 Описание проблемы</div>
+    <div style="white-space: pre-wrap; line-height:1.6;">{{ ticket.description }}</div>
+</div>
+
+<!-- Решение -->
+{% if ticket.resolution %}
+<div class="card p-4 mb-3 border-success-subtle">
+    <div class="small text-muted fw-semibold mb-2 text-uppercase" style="letter-spacing:0.5px;">✅ Решение</div>
+    <div style="white-space: pre-wrap; line-height:1.6;">{{ ticket.resolution }}</div>
+</div>
+{% elif current_user.is_admin %}
+<div class="card p-4 mb-3 border-dashed">
+    <div class="text-muted text-center py-2">
+        Решение ещё не добавлено.
+        <a href="{{ url_for('edit_ticket', ticket_id=ticket.id) }}">Добавить решение →</a>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

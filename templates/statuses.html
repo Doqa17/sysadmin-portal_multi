@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Статусы — IT Helpdesk{% endblock %}
+{% block content %}
+<h2 class="mb-2">Статусы заявок</h2>
+<div class="mb-4">
+    <a href="{{ url_for('new_status') }}" class="btn btn-create">+ Добавить</a>
+</div>
+
+<div class="card">
+    {% for status in statuses %}
+    <div class="d-flex align-items-center justify-content-between px-4 py-3 mac-list-item">
+        <div class="d-flex align-items-center gap-3">
+            <span class="badge status-badge-{{ status.color }} px-3 py-2">{{ status.name }}</span>
+            <span class="text-muted small">{{ status.tickets|length }} заявок</span>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('edit_status', status_id=status.id) }}" class="btn btn-sm btn-edit px-3">✏️</a>
+            <a href="{{ url_for('delete_status', status_id=status.id) }}" class="btn btn-sm btn-delete px-3"
+                onclick="return confirm('Удалить статус «{{ status.name }}»?');">🗑</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center p-5 text-muted">Нет статусов</div>
+    {% endfor %}
+</div>
+{% endblock %}
