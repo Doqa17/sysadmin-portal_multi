@@ -62,6 +62,7 @@ class TicketForm(FlaskForm):
 
 
 class AdminTicketForm(FlaskForm):
+    author_id = SelectField('От имени пользователя', coerce=int, validators=[DataRequired()])
     category_id = SelectField('Категория', coerce=int, validators=[DataRequired()])
     description = TextAreaField('Описание проблемы', validators=[DataRequired()])
     resolution = TextAreaField('Решение', validators=[Optional()])

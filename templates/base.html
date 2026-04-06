@@ -11,6 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 </head>
 
 <body>
@@ -167,7 +169,23 @@
                 e.target.value = val;
             });
         });
+
+        // Initialize Tom Select for searchable dropdowns
+        document.querySelectorAll('.ts-select').forEach(function(el) {
+            new TomSelect(el, {
+                allowEmptyOption: true,
+                maxOptions: 1000,
+                placeholder: el.getAttribute('placeholder') || 'Поиск...',
+                render: {
+                    no_results: function(data, escape) {
+                        return '<div class="no-results">Пользователь не найден</div>';
+                    }
+                }
+            });
+        });
     </script>
+
+    {% block scripts %}{% endblock %}
 </body>
 
 </html>

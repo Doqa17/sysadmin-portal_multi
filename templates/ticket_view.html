@@ -31,9 +31,9 @@
                 <ul class="dropdown-menu shadow border-0 rounded-4">
                     {% for status in statuses %}
                     <li><a class="dropdown-item rounded-3 mx-1" style="width:auto;"
-                        href="{{ url_for('set_ticket_status', ticket_id=ticket.id, status_id=status.id) }}">
-                        <span class="badge status-badge-{{ status.color }} me-1">{{ status.name }}</span>
-                    </a></li>
+                            href="{{ url_for('set_ticket_status', ticket_id=ticket.id, status_id=status.id) }}">
+                            <span class="badge status-badge-{{ status.color }} me-1">{{ status.name }}</span>
+                        </a></li>
                     {% endfor %}
                 </ul>
             </div>
@@ -77,7 +77,8 @@
 
 <!-- Описание -->
 <div class="card p-4 mb-3">
-    <div class="small text-muted fw-semibold mb-2 text-uppercase" style="letter-spacing:0.5px;">📋 Описание проблемы</div>
+    <div class="small text-muted fw-semibold mb-2 text-uppercase" style="letter-spacing:0.5px;">📋 Описание проблемы
+    </div>
     <div style="white-space: pre-wrap; line-height:1.6;">{{ ticket.description }}</div>
 </div>
 
@@ -96,4 +97,187 @@
 </div>
 {% endif %}
 
+{% if current_user.is_admin and ticket.contact_computer %}
+<!-- ===== IT ИНСТРУМЕНТЫ ===== -->
+<div class="card p-4 mb-3" id="it-tools-card">
+    <div class="small text-muted fw-semibold mb-3 text-uppercase" style="letter-spacing:0.5px;">🛠️ Инструменты администратора</div>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+
+        <!-- Ping -->
+        <button class="btn btn-sm btn-outline-secondary" onclick="pingComputer('{{ ticket.contact_computer }}')" id="btn-ping">
+            📡 Ping <span id="ping-indicator" class="ms-1"></span>
+        </button>
+
+        <!-- Скопировать имя ПК -->
+        <button class="btn btn-sm btn-outline-secondary"
+            onclick="copyToClipboard('{{ ticket.contact_computer }}', this)">
+            📋 Имя ПК
+        </button>
+
+        <!-- Скопировать UNC путь -->
+        <button class="btn btn-sm btn-outline-secondary"
+            onclick="copyToClipboard('\\\\{{ ticket.contact_computer }}\\c$', this)">
+            💾 \\{{ ticket.contact_computer }}\c$
+        </button>
+
+        {% if ticket.author and not ticket.author.password_never_expires %}
+        <!-- Сменить пароль -->
+        <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+            🔑 Сменить пароль
+        </button>
+
+        <!-- Продлить пароль -->
+        <button class="btn btn-sm btn-outline-info" onclick="extendPassword({{ ticket.author.id }})">
+            📅 Продлить пароль
+        </button>
+        {% elif ticket.author and ticket.author.password_never_expires %}
+        <span class="text-muted small fst-italic ms-2">🔒 Постоянный пароль — управление паролем недоступно</span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal: Смена пароля -->
+{% if ticket.author and not ticket.author.password_never_expires %}
+<div class="modal fade" id="changePasswordModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:18px; border:none; overflow:hidden;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-semibold">🔑 Смена пароля AD</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="text-muted small mb-2">Пользователь: <strong>{{ ticket.author.display_name }}</strong> (@{{ ticket.author.username }})</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Префикс пароля</label>
+                    <input type="text" class="form-control" id="pwdPrefix"
+                        value="{{ ticket.author.password_prefix or '' }}"
+                        placeholder="Введите неизменяемую часть пароля...">
+                    <div class="form-text">Последние 3 цифры будут сгенерированы автоматически</div>
+                </div>
+                <div class="alert alert-info py-2 small" id="pwdPreview" style="display:none;">
+                    <strong>Новый пароль будет:</strong> <span id="pwdPreviewText" class="font-monospace fw-bold"></span>
+                </div>
+                <div id="pwdResult" style="display:none;"></div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-warning fw-semibold" onclick="changePassword({{ ticket.author.id }})">
+                    Сменить пароль в AD
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyToClipboard(text, btn) {
+    navigator.clipboard.writeText(text).then(function() {
+        const orig = btn.textContent;
+        btn.textContent = '✅ Скопировано!';
+        btn.classList.add('btn-success');
+        btn.classList.remove('btn-outline-secondary');
+        setTimeout(() => {
+            btn.textContent = orig;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-secondary');
+        }, 2000);
+    });
+}
+
+function pingComputer(computer) {
+    const btn = document.getElementById('btn-ping');
+    const indicator = document.getElementById('ping-indicator');
+    btn.disabled = true;
+    indicator.textContent = '⏳';
+    fetch('/api/tools/ping', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
+        body: JSON.stringify({computer: computer})
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.alive) {
+            indicator.innerHTML = '<span class="badge bg-success">Онлайн ✓</span>';
+        } else {
+            indicator.innerHTML = '<span class="badge bg-danger">Недоступен ✗</span>';
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        indicator.innerHTML = '<span class="badge bg-secondary">Ошибка</span>';
+    });
+}
+
+// Preview password as user types
+document.addEventListener('DOMContentLoaded', function() {
+    const prefixInput = document.getElementById('pwdPrefix');
+    if (prefixInput) {
+        prefixInput.addEventListener('input', function() {
+            const preview = document.getElementById('pwdPreview');
+            const previewText = document.getElementById('pwdPreviewText');
+            if (this.value) {
+                preview.style.display = 'block';
+                previewText.textContent = this.value + 'XXX';
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+    }
+});
+
+function changePassword(userId) {
+    const prefix = document.getElementById('pwdPrefix').value.trim();
+    if (!prefix) {
+        alert('Введите префикс пароля');
+        return;
+    }
+    const resultDiv = document.getElementById('pwdResult');
+    resultDiv.style.display = 'none';
+
+    fetch('/api/tools/change-password', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
+        body: JSON.stringify({user_id: userId, prefix: prefix})
+    })
+    .then(r => r.json())
+    .then(data => {
+        resultDiv.style.display = 'block';
+        if (data.success) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    ✅ ${data.message}<br>
+                    <strong>Новый пароль:</strong>
+                    <span class="font-monospace fw-bold fs-5">${data.new_password}</span>
+                </div>`;
+        } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger">❌ ${data.message}</div>`;
+        }
+    });
+}
+
+function extendPassword(userId) {
+    if (!confirm('Продлить срок действия пароля пользователя?')) return;
+    fetch('/api/tools/extend-password', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
+        body: JSON.stringify({user_id: userId})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+        } else {
+            alert('❌ ' + data.message);
+        }
+    });
+}
+</script>
 {% endblock %}

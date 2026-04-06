@@ -22,6 +22,8 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120))
     is_from_ad = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
+    password_never_expires = db.Column(db.Boolean, default=False)
+    password_prefix = db.Column(db.String(100))
 
     @property
     def is_admin(self):

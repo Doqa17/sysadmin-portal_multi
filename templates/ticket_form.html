@@ -14,17 +14,22 @@
 
             {% if is_admin_form %}
             <!-- ADMIN FORM -->
+            <div class="col-12">
+                {{ form.author_id.label(class="form-label") }}
+                {{ form.author_id(class="form-select custom-select ts-select", placeholder="Поиск пользователя...") }}
+                <div class="form-text">Выберите пользователя, от имени которого создается заявка.</div>
+            </div>
             <div class="col-12 col-md-6">
                 {{ form.category_id.label(class="form-label") }}
-                {{ form.category_id(class="form-select", id="cat-select") }}
+                {{ form.category_id(class="form-select custom-select", id="cat-select") }}
             </div>
             <div class="col-12 col-md-6">
                 {{ form.assignee_id.label(class="form-label") }}
-                {{ form.assignee_id(class="form-select") }}
+                {{ form.assignee_id(class="form-select custom-select") }}
             </div>
             <div class="col-12 col-md-4">
                 {{ form.status_id.label(class="form-label") }}
-                {{ form.status_id(class="form-select") }}
+                {{ form.status_id(class="form-select custom-select") }}
             </div>
             <div class="col-12 col-md-4">
                 {{ form.contact_phone.label(class="form-label") }}
@@ -44,7 +49,7 @@
             </div>
             <div class="col-12">
                 {{ form.article_id.label(class="form-label") }}
-                {{ form.article_id(class="form-select") }}
+                {{ form.article_id(class="form-select custom-select") }}
             </div>
 
             {% else %}
@@ -56,7 +61,7 @@
             </div>
             <div class="col-12 col-md-6">
                 {{ form.category_id.label(class="form-label") }}
-                {{ form.category_id(class="form-select") }}
+                {{ form.category_id(class="form-select custom-select") }}
                 <div class="form-text">Выберите наиболее подходящую категорию</div>
             </div>
             <div class="col-12 col-md-3">
@@ -87,4 +92,33 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{% if is_admin_form %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const authorSelect = document.getElementById('author_id');
+    if (!authorSelect || !authorSelect.tomselect) return;
+
+    const ts = authorSelect.tomselect;
+
+    ts.on('change', function (userId) {
+        if (!userId || userId === '0') return;
+
+        fetch('/api/user/' + userId)
+            .then(r => r.json())
+            .then(data => {
+                const phone = document.getElementById('contact_phone');
+                const computer = document.getElementById('contact_computer');
+                if (phone && !phone.value) phone.value = data.phone;
+                else if (phone) phone.value = data.phone;
+                if (computer && !computer.value) computer.value = data.computer_name;
+                else if (computer) computer.value = data.computer_name;
+            })
+            .catch(err => console.warn('Failed to load user info:', err));
+    });
+});
+</script>
+{% endif %}
 {% endblock %}

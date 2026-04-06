@@ -127,6 +127,108 @@ a:not(.btn):not(.navbar-brand):not(.dropdown-item):not(.nav-link):not(.quick-act
 [data-bs-theme="dark"] .form-control::placeholder { color: rgba(255,255,255,0.3); }
 [data-bs-theme="dark"] .form-select option { background: #1e2433; }
 
+/* ===== CUSTOM FORM FIELDS ===== */
+.form-control,
+.form-select {
+    border-radius: 12px;
+    border: 1.5px solid var(--border-color, rgba(0,0,0,0.1));
+    padding: 0.55rem 0.9rem;
+    font-size: 0.9rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background-color: var(--input-bg, #f8f9fa);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #007aff;
+    box-shadow: 0 0 0 3px rgba(0,122,255,0.15);
+    outline: none;
+}
+
+/* Custom styled select (macOS-inspired) — arrow always pinned to right */
+.form-select.custom-select,
+.form-select.custom-select:focus,
+.form-select.custom-select:active,
+.form-select.custom-select[aria-expanded="true"] {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.9rem center !important;
+    background-size: 12px 12px !important;
+    padding-right: 2.5rem !important;
+    cursor: pointer;
+}
+
+[data-bs-theme="dark"] .form-select.custom-select,
+[data-bs-theme="dark"] .form-select.custom-select:focus,
+[data-bs-theme="dark"] .form-select.custom-select:active,
+[data-bs-theme="dark"] .form-select.custom-select[aria-expanded="true"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23aaa' d='M6 8L1 3h10z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.9rem center !important;
+    background-size: 12px 12px !important;
+}
+
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+    --input-bg: rgba(255,255,255,0.06);
+    --border-color: rgba(255,255,255,0.12);
+}
+
+/* Tom Select Styling */
+.ts-control {
+    border-radius: 12px !important;
+    border: 1.5px solid var(--border-color, rgba(0,0,0,0.1)) !important;
+    padding: 0.55rem 0.9rem !important;
+    background-color: var(--input-bg, #f8f9fa) !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+    color: inherit !important;
+}
+
+.ts-dropdown {
+    border-radius: 12px !important;
+    margin-top: 5px !important;
+    border: 1.5px solid var(--border-color, rgba(0,0,0,0.1)) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+    overflow: hidden !important; /* ensures children don't overflow the rounded corners */
+}
+
+/* Rounded corners for the list items inside Tom Select */
+.ts-dropdown .option, .ts-dropdown .no-results {
+    padding: 10px 15px !important;
+}
+
+.ts-dropdown .active {
+    background-color: #007aff !important;
+    color: white !important;
+}
+
+/* Dark theme for Tom Select */
+[data-bs-theme="dark"] .ts-control,
+[data-bs-theme="dark"] .ts-dropdown {
+    background-color: #1e2433 !important;
+    border-color: rgba(255,255,255,0.12) !important;
+    color: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] .ts-dropdown .option {
+    color: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] .ts-dropdown .active {
+    background-color: #3b82f6 !important;
+}
+
+[data-bs-theme="dark"] .ts-control .item {
+    color: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] .ts-wrapper.focus .ts-control {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.25) !important;
+}
+
 [data-bs-theme="dark"] .dropdown-menu {
     background: rgba(25,30,45,0.95) !important;
     backdrop-filter: blur(24px);

@@ -13,7 +13,7 @@ from forms import (
     LoginForm, RegisterForm, ProfileForm, AdminUserForm,
     TicketForm, AdminTicketForm, CategoryForm, ArticleForm, ADSettingsForm
 )
-from ad_service import test_connection, sync_users, authenticate_ad
+from ad_service import test_connection, sync_users, authenticate_ad, change_ad_password, extend_ad_password
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -87,6 +87,10 @@ with app.app_context():
             is_active=True
         )
         db.session.add(admin)
+    # Default AD Settings
+    if not ADSettings.query.first():
+        new_filter = '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2))(!(sAMAccountName=HealthMailbox*)))'
+        db.session.add(ADSettings(search_filter=new_filter))
     db.session.commit()
 
 
@@ -312,13 +316,94 @@ def view_ticket(ticket_id):
     return render_template('ticket_view.html', ticket=ticket, statuses=statuses)
 
 
+@app.route('/api/user/<int:user_id>')
+@admin_required
+def api_user_info(user_id):
+    """API for getting user contact info to auto-fill ticket form."""
+    from flask import jsonify
+    user = User.query.get_or_404(user_id)
+    return jsonify({
+        'phone': user.phone or '',
+        'computer_name': user.computer_name or '',
+        'display_name': user.display_name,
+    })
+
+
+@app.route('/api/tools/ping', methods=['POST'])
+@admin_required
+def api_tool_ping():
+    """Ping a computer by name or IP."""
+    import subprocess
+    from flask import jsonify
+    computer = request.json.get('computer', '').strip()
+    if not computer:
+        return jsonify({'alive': False, 'error': 'Имя компьютера не указано'})
+    try:
+        result = subprocess.run(
+            ['ping', '-n', '1', '-w', '1500', computer],
+            capture_output=True, text=True, timeout=5
+        )
+        alive = result.returncode == 0
+        return jsonify({'alive': alive, 'computer': computer})
+    except Exception as e:
+        return jsonify({'alive': False, 'error': str(e)})
+
+
+@app.route('/api/tools/change-password', methods=['POST'])
+@admin_required
+def api_tool_change_password():
+    """Change AD user password: prefix + 3 random digits."""
+    import random
+    from flask import jsonify
+    user_id = request.json.get('user_id')
+    prefix = request.json.get('prefix', '').strip()
+    if not user_id or not prefix:
+        return jsonify({'success': False, 'message': 'Не указаны параметры'})
+
+    user = User.query.get_or_404(user_id)
+    if user.password_never_expires:
+        return jsonify({'success': False, 'message': 'Пользователь имеет постоянный пароль'})
+
+    suffix = str(random.randint(0, 999)).zfill(3)
+    new_password = prefix + suffix
+
+    settings = ADSettings.query.first()
+    success, message = change_ad_password(user.username, new_password, settings)
+
+    if success:
+        user.password_prefix = prefix
+        db.session.commit()
+
+    return jsonify({'success': success, 'message': message, 'new_password': new_password if success else None})
+
+
+@app.route('/api/tools/extend-password', methods=['POST'])
+@admin_required
+def api_tool_extend_password():
+    """Extend AD password expiry by resetting pwdLastSet to now."""
+    from flask import jsonify
+    user_id = request.json.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Не указан ID пользователя'})
+
+    user = User.query.get_or_404(user_id)
+    if user.password_never_expires:
+        return jsonify({'success': False, 'message': 'Пользователь имеет постоянный пароль'})
+
+    settings = ADSettings.query.first()
+    success, message = extend_ad_password(user.username, settings)
+    return jsonify({'success': success, 'message': message})
+
+
 @app.route('/tickets/new', methods=['GET', 'POST'])
 @login_required
 def new_ticket():
     if current_user.is_admin:
         form = AdminTicketForm()
         form.category_id.choices = [(c.id, c.name) for c in Category.query.all()]
-        it_users = User.query.filter_by(role='admin', is_active=True).all()
+        it_users = User.query.filter(User.role.in_(['admin', 'superadmin']), User.is_active == True).all()
+        all_users = User.query.filter_by(is_active=True).order_by(User.full_name).all()
+        form.author_id.choices = [(0, '')] + [(u.id, u.display_name + ' (@' + u.username + ')') for u in all_users]
         form.assignee_id.choices = [(0, '— Автоматически —')] + [(u.id, u.display_name) for u in it_users]
         form.status_id.choices = [(s.id, s.name) for s in TicketStatus.query.all()]
         form.article_id.choices = [(0, '— Не связано —')] + [(a.id, a.title) for a in Article.query.all()]
@@ -332,7 +417,7 @@ def new_ticket():
             ticket = Ticket(
                 description=form.description.data,
                 resolution=form.resolution.data,
-                author_id=current_user.id,
+                author_id=form.author_id.data,  # От имени выбранного пользователя
                 assignee_id=assignee_id,
                 contact_phone=form.contact_phone.data,
                 contact_computer=form.contact_computer.data,
@@ -344,7 +429,7 @@ def new_ticket():
             db.session.commit()
             flash('Заявка создана')
             return redirect(url_for('tickets'))
-        # Pre-fill contact info
+        # Pre-fill contact info & author
         if request.method == 'GET':
             form.contact_phone.data = current_user.phone
             form.contact_computer.data = current_user.computer_name
@@ -385,7 +470,9 @@ def edit_ticket(ticket_id):
     ticket = Ticket.query.get_or_404(ticket_id)
     form = AdminTicketForm(obj=ticket)
     form.category_id.choices = [(c.id, c.name) for c in Category.query.all()]
-    it_users = User.query.filter_by(role='admin', is_active=True).all()
+    it_users = User.query.filter(User.role.in_(['admin', 'superadmin']), User.is_active == True).all()
+    all_users = User.query.filter_by(is_active=True).order_by(User.full_name).all()
+    form.author_id.choices = [(0, '')] + [(u.id, u.display_name + ' (@' + u.username + ')') for u in all_users]
     form.assignee_id.choices = [(0, '— Не назначено —')] + [(u.id, u.display_name) for u in it_users]
     form.status_id.choices = [(s.id, s.name) for s in TicketStatus.query.all()]
     form.article_id.choices = [(0, '— Не связано —')] + [(a.id, a.title) for a in Article.query.all()]
@@ -393,6 +480,7 @@ def edit_ticket(ticket_id):
     if form.validate_on_submit():
         ticket.description = form.description.data
         ticket.resolution = form.resolution.data
+        ticket.author_id = form.author_id.data
         ticket.contact_phone = form.contact_phone.data
         ticket.contact_computer = form.contact_computer.data
         ticket.category_id = form.category_id.data
@@ -404,6 +492,7 @@ def edit_ticket(ticket_id):
         return redirect(url_for('view_ticket', ticket_id=ticket.id))
 
     if request.method == 'GET':
+        form.author_id.data = ticket.author_id
         form.category_id.data = ticket.category_id
         form.status_id.data = ticket.status_id
         form.assignee_id.data = ticket.assignee_id or 0

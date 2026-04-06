@@ -17,31 +17,45 @@ def _get_ldap3():
         return None
 
 
-def test_connection(settings):
-    """
-    Test connection to AD server.
-    Returns (success: bool, message: str)
-    """
+def _get_connection(settings):
+    """Create and return an LDAP connection with StartTLS support."""
     ldap3 = _get_ldap3()
     if not ldap3:
-        return False, 'Библиотека ldap3 не установлена. Выполните: pip install ldap3'
-
-    if not settings or not settings.server:
-        return False, 'Настройки AD не заполнены'
-
+        return None, "Библиотека ldap3 не установлена"
+    
     try:
-        server = ldap3.Server(settings.server, get_info=ldap3.ALL, connect_timeout=5)
+        # Check if the server is specified with ldaps://
+        is_ldaps = settings.server.startswith('ldaps://') if settings.server else False
+        
+        server = ldap3.Server(settings.server, get_info=ldap3.ALL, connect_timeout=10, use_ssl=is_ldaps)
         conn = ldap3.Connection(
             server,
             user=settings.bind_user,
-            password=settings.bind_password,
-            auto_bind=True
+            password=settings.bind_password
         )
-        conn.unbind()
-        return True, 'Подключение успешно!'
+        
+        if not conn.bind():
+            return None, f"Ошибка авторизации: {conn.result['description']}"
+            
+        # If not LDAPS, try to upgrade to StartTLS for secure password operations
+        if not is_ldaps:
+            try:
+                conn.start_tls()
+            except Exception as tls_err:
+                logger.warning(f"StartTLS failed (this might prevent password changes): {tls_err}")
+                
+        return conn, None
     except Exception as e:
-        logger.error(f'AD connection test failed: {e}')
-        return False, f'Ошибка подключения: {str(e)}'
+        return None, str(e)
+
+
+def test_connection(settings):
+    """Test connection to AD server."""
+    conn, error = _get_connection(settings)
+    if error:
+        return False, f"Ошибка подключения: {error}"
+    conn.unbind()
+    return True, "Подключение успешно!"
 
 
 def sync_users(settings, db, User):
@@ -63,13 +77,10 @@ def sync_users(settings, db, User):
     ad_usernames = set()
 
     try:
-        server = ldap3.Server(settings.server, get_info=ldap3.ALL, connect_timeout=10)
-        conn = ldap3.Connection(
-            server,
-            user=settings.bind_user,
-            password=settings.bind_password,
-            auto_bind=True
-        )
+        conn, error = _get_connection(settings)
+        if error:
+            return 0, 0, 0, [error]
+
 
         search_filter = settings.search_filter or '(&(objectClass=user)(objectCategory=person))'
 
@@ -109,9 +120,10 @@ def sync_users(settings, db, User):
                 phone = str(entry.telephoneNumber) if entry.telephoneNumber else None
                 email = str(entry.mail) if entry.mail else None
 
-                # Check if user is disabled (UAC flag 2)
+                # Check if user is disabled (UAC bit 2) and if password never expires (UAC bit 0x10000)
                 uac = int(str(entry.userAccountControl)) if entry.userAccountControl else 0
                 is_active = not bool(uac & 2)
+                pwd_never_expires = bool(uac & 0x10000)
 
                 existing = User.query.filter(
                     db.func.lower(User.username) == sam.lower()
@@ -124,6 +136,7 @@ def sync_users(settings, db, User):
                     existing.email = email or existing.email
                     existing.is_from_ad = True
                     existing.is_active = is_active
+                    existing.password_never_expires = pwd_never_expires
                     updated += 1
                 else:
                     new_user = User(
@@ -135,7 +148,8 @@ def sync_users(settings, db, User):
                         phone=phone,
                         email=email,
                         is_from_ad=True,
-                        is_active=is_active
+                        is_active=is_active,
+                        password_never_expires = pwd_never_expires
                     )
                     db.session.add(new_user)
                     created += 1
@@ -176,15 +190,10 @@ def authenticate_ad(username, password, settings):
         return False
 
     try:
-        server = ldap3.Server(settings.server, connect_timeout=5)
+        bind_conn, error = _get_connection(settings)
+        if error:
+            return False
 
-        # Try to find user's DN first via bind user
-        bind_conn = ldap3.Connection(
-            server,
-            user=settings.bind_user,
-            password=settings.bind_password,
-            auto_bind=True
-        )
 
         bind_conn.search(
             search_base=settings.base_dn,
@@ -212,3 +221,92 @@ def authenticate_ad(username, password, settings):
     except Exception as e:
         logger.debug(f'AD authentication failed for {username}: {e}')
         return False
+
+
+def change_ad_password(username, new_password, settings):
+    """
+    Change user password in Active Directory.
+    Returns (success: bool, message: str)
+    """
+    ldap3 = _get_ldap3()
+    if not ldap3:
+        return False, 'Библиотека ldap3 не установлена'
+
+    if not settings or not settings.server:
+        return False, 'Настройки AD не заполнены'
+
+    try:
+        conn, error = _get_connection(settings)
+        if error:
+            return False, error
+
+
+        # Find user DN
+        conn.search(
+            search_base=settings.base_dn,
+            search_filter=f'(&(objectClass=user)(sAMAccountName={ldap3.utils.conv.escape_filter_chars(username)}))',
+            attributes=['distinguishedName']
+        )
+
+        if not conn.entries:
+            conn.unbind()
+            return False, f'Пользователь {username} не найден в AD'
+
+        user_dn = str(conn.entries[0].distinguishedName)
+
+        # Change password using ldap3 extend
+        result = conn.extend.microsoft.modify_password(user_dn, new_password)
+        conn.unbind()
+
+        if result:
+            return True, 'Пароль успешно изменён в Active Directory'
+        else:
+            return False, 'Ошибка смены пароля в AD'
+
+    except Exception as e:
+        logger.error(f'AD password change failed for {username}: {e}')
+        return False, f'Ошибка: {str(e)}'
+
+
+def extend_ad_password(username, settings):
+    """
+    Reset password clock in AD (set pwdLastSet = now) so
+    password won't expire for another full policy period (~35 days).
+    Returns (success: bool, message: str)
+    """
+    ldap3 = _get_ldap3()
+    if not ldap3:
+        return False, 'Библиотека ldap3 не установлена'
+
+    if not settings or not settings.server:
+        return False, 'Настройки AD не заполнены'
+
+    try:
+        conn, error = _get_connection(settings)
+        if error:
+            return False, error
+
+
+        conn.search(
+            search_base=settings.base_dn,
+            search_filter=f'(&(objectClass=user)(sAMAccountName={ldap3.utils.conv.escape_filter_chars(username)}))',
+            attributes=['distinguishedName']
+        )
+
+        if not conn.entries:
+            conn.unbind()
+            return False, f'Пользователь {username} не найден в AD'
+
+        user_dn = str(conn.entries[0].distinguishedName)
+
+        # Step 1: Set pwdLastSet = 0 (forces must-change), then = -1 (resets to now)
+        conn.modify(user_dn, {'pwdLastSet': [(ldap3.MODIFY_REPLACE, [0])]})
+        conn.modify(user_dn, {'pwdLastSet': [(ldap3.MODIFY_REPLACE, [-1])]})
+        conn.unbind()
+
+        return True, 'Срок действия пароля продлён сегодняшней датой'
+
+    except Exception as e:
+        logger.error(f'AD password extension failed for {username}: {e}')
+        return False, f'Ошибка: {str(e)}'
+
