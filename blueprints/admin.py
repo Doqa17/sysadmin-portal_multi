@@ -364,7 +364,6 @@ def ad_settings():
             settings = ADSettings()
             db.session.add(settings)
         settings.server = form.server.data
-        settings.domain = form.domain.data
         settings.base_dn = form.base_dn.data
         settings.bind_user = form.bind_user.data
         if form.bind_password.data:

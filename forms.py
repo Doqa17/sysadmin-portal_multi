@@ -102,7 +102,7 @@ class ADSettingsForm(FlaskForm):
                             render_kw={'placeholder': 'CN=ldap_reader,DC=company,DC=local'})
     bind_password = PasswordField('Bind Password', validators=[Optional()])
     search_filter = StringField('Фильтр поиска', validators=[Optional(), Length(max=300)])
-    timezone_offset = IntegerField('Часовой пояс (UTC offset)', default=8, render_kw={'placeholder': 'Например, 3 для МСК'})
+    timezone_offset = IntegerField('Часовой пояс', default=8, render_kw={'placeholder': 'Например, 3 для МСК'})
     is_active = BooleanField('Использовать AD для аутентификации')
     submit = SubmitField('Сохранить')
 
