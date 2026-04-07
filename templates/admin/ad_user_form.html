@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Новый пользователь AD — IT Helpdesk{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h2 class="mb-0">Создать сотрудника в AD</h2>
+    <a href="{{ url_for('admin.users') }}" class="btn btn-sm btn-back px-3">← К списку</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card p-4 shadow-sm border-0">
+            <form method="post" id="adUserForm">
+                {{ form.hidden_tag() }}
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        {{ form.first_name.label(class="form-label fw-bold small") }}
+                        {{ form.first_name(class="form-control", placeholder="Имя") }}
+                    </div>
+                    <div class="col-12 col-md-6">
+                        {{ form.last_name.label(class="form-label fw-bold small") }}
+                        {{ form.last_name(class="form-control", placeholder="Фамилия") }}
+                    </div>
+                    <div class="col-12 col-md-6">
+                        {{ form.username.label(class="form-label fw-bold small") }}
+                        {{ form.username(class="form-control", placeholder="Логин (например, i.ivanov)") }}
+                    </div>
+                    <div class="col-12 col-md-6">
+                        {{ form.password.label(class="form-label fw-bold small") }}
+                        {{ form.password(class="form-control", placeholder="Пароль...") }}
+                    </div>
+
+                    <div class="col-12 mt-3 mb-1">
+                        <hr>
+                        <h6 class="small text-muted fw-bold">Дополнительные данные (AD)</h6>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        {{ form.email.label(class="form-label fw-bold small") }}
+                        {{ form.email(class="form-control", placeholder="Email...") }}
+                    </div>
+                    <div class="col-12 col-md-6">
+                        {{ form.department.label(class="form-label fw-bold small") }}
+                        {{ form.department(class="form-control", placeholder="Отдел...") }}
+                    </div>
+                    <div class="col-12 col-md-6">
+                        {{ form.phone.label(class="form-label fw-bold small") }}
+                        {{ form.phone(class="form-control", placeholder="00-00") }}
+                    </div>
+                    <div class="col-12 col-md-6">
+                        {{ form.computer_name.label(class="form-label fw-bold small") }}
+                        {{ form.computer_name(class="form-control", placeholder="00zu") }}
+                    </div>
+
+                    <div class="col-12 pt-3">
+                        {{ form.target_ou.label(class="form-label fw-bold small text-primary") }}
+                        {{ form.target_ou(class="form-select border-primary bg-light py-2") }}
+                        <div class="form-text small opacity-75">Расположение пользователя в структуре Active Directory
+                            (OU/Контейнер)</div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-4 pt-3 border-top">
+                    {{ form.submit(class="btn btn-primary px-4 fw-bold") }}
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-light px-4">Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card p-4 shadow-sm border-0 h-100">
+            <h6 class="fw-bold mb-3">Права доступа (Группы AD)</h6>
+
+            <div class="mb-3">
+                <div class="input-group">
+                    <input type="text" id="groupSearchInput" class="form-control"
+                        placeholder="Найти группу в домене...">
+                    <button class="btn btn-outline-primary" type="button" onclick="searchGroups()">Искать</button>
+                </div>
+                <!-- Зона результатов поиска -->
+                <div id="groupSearchResults" class="list-group mt-2" style="max-height: 200px; overflow-y: auto;"></div>
+            </div>
+
+            <h6 class="small text-muted fw-bold mt-4">Выбранные группы:</h6>
+            <div id="selectedGroupsBox" class="d-flex flex-wrap gap-2 mt-2 p-3 bg-light rounded min-vh-25">
+                <span class="text-muted small w-100 text-center" id="emptyGroupsText">Нет групп</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedGroups = [];
+    const groupsDataField = document.getElementById('groups_data');
+    const adUserForm = document.getElementById('adUserForm');
+
+    // Привязываем обновление скрытого поля перед отправкой формы
+    adUserForm.addEventListener('submit', function () {
+        groupsDataField.value = JSON.stringify(selectedGroups.map(g => g.dn));
+    });
+
+    function searchGroups() {
+        const query = document.getElementById('groupSearchInput').value;
+        if (!query) return;
+
+        const resultsBox = document.getElementById('groupSearchResults');
+        resultsBox.innerHTML = '<div class="text-center p-2"><small class="text-muted">Поиск...</small></div>';
+
+        fetch('/api/tools/search-groups?q=' + encodeURIComponent(query))
+            .then(r => r.json())
+            .then(data => {
+                resultsBox.innerHTML = '';
+                // data - это сразу массив
+                if (data && data.length > 0) {
+                    data.forEach(group => {
+                        const item = document.createElement('button');
+                        item.className = 'list-group-item list-group-item-action py-2';
+                        // Защита от дублей
+                        const isAlreadySelected = selectedGroups.some(g => g.dn === group.dn);
+                        if (isAlreadySelected) {
+                            item.classList.add('disabled', 'bg-light');
+                            item.innerHTML = `<span class="fw-bold fs-7">${group.cn}</span> (уже добавлена)`;
+                        } else {
+                            item.innerHTML = `<span class="fw-bold fs-7">${group.cn}</span><br><small class="text-muted" style="font-size:0.7em;">${group.dn}</small>`;
+                            item.onclick = () => addGroup(group.cn, group.dn);
+                        }
+                        resultsBox.appendChild(item);
+                    });
+                } else {
+                    resultsBox.innerHTML = '<div class="text-center p-2"><small class="text-muted">Ничего не найдено</small></div>';
+                }
+            }).catch(e => {
+                resultsBox.innerHTML = '<div class="text-danger p-2 text-center text-sm">Ошибка поиска</div>';
+            });
+    }
+
+    // Поиск по Enter
+    document.getElementById('groupSearchInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            searchGroups();
+        }
+    });
+
+    function addGroup(cn, dn) {
+        if (selectedGroups.some(g => g.dn === dn)) return;
+
+        selectedGroups.push({ cn: cn, dn: dn });
+        renderSelectedGroups();
+        document.getElementById('groupSearchResults').innerHTML = ''; // Очищаем поиск
+        document.getElementById('groupSearchInput').value = '';
+    }
+
+    function removeGroup(dn) {
+        selectedGroups = selectedGroups.filter(g => g.dn !== dn);
+        renderSelectedGroups();
+    }
+
+    function renderSelectedGroups() {
+        const box = document.getElementById('selectedGroupsBox');
+        if (selectedGroups.length === 0) {
+            box.innerHTML = '<span class="text-muted small w-100 text-center" id="emptyGroupsText">Нет групп. Создастся только базовая учетка.</span>';
+            return;
+        }
+
+        box.innerHTML = '';
+        selectedGroups.forEach(g => {
+            const el = document.createElement('div');
+            el.className = 'badge bg-primary bg-opacity-10 text-primary border border-primary-subtle d-flex align-items-center gap-2 p-2';
+            el.innerHTML = `
+                <span>${g.cn}</span>
+                <span style="cursor:pointer;font-size:14px;line-height:1;" onclick="removeGroup('${g.dn}')">&times;</span>
+            `;
+            box.appendChild(el);
+        });
+    }
+</script>
+{% endblock %}

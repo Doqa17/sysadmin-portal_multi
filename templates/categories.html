@@ -3,7 +3,7 @@
 {% block content %}
 <h2 class="mb-2">Категории заявок</h2>
 <div class="mb-4">
-    <a href="{{ url_for('new_category') }}" class="btn btn-create">+ Добавить</a>
+    <a href="{{ url_for('admin.new_category') }}" class="btn btn-create">+ Добавить</a>
 </div>
 
 <div class="card">
@@ -22,8 +22,8 @@
             </div>
         </div>
         <div class="btn-group">
-            <a href="{{ url_for('edit_category', category_id=cat.id) }}" class="btn btn-sm btn-edit px-3">✏️</a>
-            <a href="{{ url_for('delete_category', category_id=cat.id) }}" class="btn btn-sm btn-delete px-3"
+            <a href="{{ url_for('admin.edit_category', category_id=cat.id) }}" class="btn btn-sm btn-edit px-3">✏️</a>
+            <a href="{{ url_for('admin.delete_category', category_id=cat.id) }}" class="btn btn-sm btn-delete px-3"
                 onclick="return confirm('Удалить категорию «{{ cat.name }}»?');">🗑</a>
         </div>
     </div>

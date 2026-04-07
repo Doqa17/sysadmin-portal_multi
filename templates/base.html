@@ -18,7 +18,7 @@
 <body>
     <nav class="navbar navbar-expand-lg mb-4">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
                 <span class="brand-icon">🖥️</span>
                 <span class="brand-text">IT Helpdesk</span>
             </a>
@@ -32,25 +32,25 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}"
-                            href="{{ url_for('index') }}">
+                            href="{{ url_for('main.index') }}">
                             Главная
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint and 'ticket' in request.endpoint %}active{% endif %}"
-                            href="{{ url_for('tickets') }}">
+                            href="{{ url_for('tickets.index') }}">
                             {% if current_user.is_admin %}Все заявки{% else %}Мои заявки{% endif %}
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint and 'article' in request.endpoint %}active{% endif %}"
-                            href="{{ url_for('articles') }}">
+                            href="{{ url_for('articles.index') }}">
                             База знаний
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint and 'todo' in request.endpoint %}active{% endif %}"
-                            href="{{ url_for('todos') }}">
+                            href="{{ url_for('todos.index') }}">
                             Мои задачи
                         </a>
                     </li>
@@ -61,22 +61,22 @@
                             Управление
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">👥 Пользователи</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('categories') }}">📂 Категории</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('statuses') }}">🏷 Статусы</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.users') }}">👥 Пользователи</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.categories') }}">📂 Категории</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.statuses') }}">🏷 Статусы</a></li>
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
-                            <li><a class="dropdown-item" href="{{ url_for('ad_settings') }}">🔗 Active Directory</a>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.ad_settings') }}">🔗 Active Directory</a>
                             </li>
-                            <li><a class="dropdown-item" href="{{ url_for('new_article') }}">📝 Новая статья</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('articles.new') }}">📝 Новая статья</a></li>
                         </ul>
                     </li>
                     {% endif %}
                 </ul>
 
                 <div class="d-flex align-items-center gap-2">
-                    <a href="{{ url_for('new_ticket') }}" class="btn btn-create btn-sm">
+                    <a href="{{ url_for('tickets.new') }}" class="btn btn-create btn-sm">
                         + Новая заявка
                     </a>
                     <div class="dropdown">
@@ -97,11 +97,11 @@
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
-                            <li><a class="dropdown-item" href="{{ url_for('profile') }}">⚙️ Профиль</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.profile') }}">⚙️ Профиль</a></li>
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
-                            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">← Выход</a></li>
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">← Выход</a></li>
                         </ul>
                     </div>
                     <button class="btn btn-theme" id="themeToggle" title="Переключить тему">☀️</button>

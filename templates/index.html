@@ -7,7 +7,7 @@
 <h2 class="mb-2">Панель ьленаП</h2>
 <p class="text-muted small mb-4">Добро пожаловать, {{ current_user.display_name }}</p>
 <div class="mb-4">
-    <a href="{{ url_for('new_ticket') }}" class="btn btn-create">+ Создать заявку</a>
+    <a href="{{ url_for('tickets.new') }}" class="btn btn-create">+ Создать заявку</a>
 </div>
 
 <div class="row g-3 mb-4">
@@ -54,22 +54,22 @@
         <div class="card p-4 d-flex flex-column" style="height: 400px;">
             <h6 class="fw-semibold mb-3">Быстрые действия</h6>
             <div class="d-flex flex-column gap-2 overflow-auto">
-                <a href="{{ url_for('tickets') }}" class="quick-action-btn">
+                <a href="{{ url_for('tickets.index') }}" class="quick-action-btn">
                     <span>📋</span> Все заявки
                 </a>
-                <a href="{{ url_for('new_ticket') }}" class="quick-action-btn">
+                <a href="{{ url_for('tickets.new') }}" class="quick-action-btn">
                     <span>➕</span> Новая заявка
                 </a>
-                <a href="{{ url_for('articles') }}" class="quick-action-btn">
+                <a href="{{ url_for('articles.index') }}" class="quick-action-btn">
                     <span>📚</span> База знаний
                 </a>
-                <a href="{{ url_for('admin_users') }}" class="quick-action-btn">
+                <a href="{{ url_for('admin.users') }}" class="quick-action-btn">
                     <span>👥</span> Пользователи
                 </a>
-                <a href="{{ url_for('categories') }}" class="quick-action-btn">
+                <a href="{{ url_for('admin.categories') }}" class="quick-action-btn">
                     <span>📂</span> Категории
                 </a>
-                <a href="{{ url_for('ad_settings') }}" class="quick-action-btn">
+                <a href="{{ url_for('admin.ad_settings') }}" class="quick-action-btn">
                     <span>🔗</span> Active Directory
                 </a>
             </div>
@@ -82,12 +82,12 @@
     <div class="card-body p-0">
         <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom-subtle">
             <h6 class="fw-semibold mb-0">Последние заявки</h6>
-            <a href="{{ url_for('tickets') }}" class="btn btn-sm btn-outline-primary">Все →</a>
+            <a href="{{ url_for('tickets.index') }}" class="btn btn-sm btn-outline-primary">Все →</a>
         </div>
         {% for ticket in recent_tickets %}
         <div class="d-flex align-items-center justify-content-between px-4 py-3 mac-list-item">
             <div>
-                <a href="{{ url_for('view_ticket', ticket_id=ticket.id) }}"
+                <a href="{{ url_for('tickets.view', ticket_id=ticket.id) }}"
                     class="fw-medium text-body text-decoration-none">
                     {{ ticket.description[:70] }}{% if ticket.description|length > 70 %}…{% endif %}
                 </a>
@@ -110,7 +110,7 @@
     }}! 👋</h2>
 <p class="text-muted small mb-4">{{ current_user.department or 'Система заявок IT-отдела' }}</p>
 <div class="mb-4">
-    <a href="{{ url_for('new_ticket') }}" class="btn btn-create">+ Подать заявку</a>
+    <a href="{{ url_for('tickets.new') }}" class="btn btn-create">+ Подать заявку</a>
 </div>
 
 <div class="row g-3 mb-4">
@@ -143,12 +143,12 @@
         <div class="card">
             <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom-subtle">
                 <h6 class="fw-semibold mb-0">Последние мои заявки</h6>
-                <a href="{{ url_for('tickets') }}" class="btn btn-sm btn-outline-primary">Все →</a>
+                <a href="{{ url_for('tickets.index') }}" class="btn btn-sm btn-outline-primary">Все →</a>
             </div>
             {% for ticket in my_tickets %}
             <div class="d-flex align-items-center justify-content-between px-4 py-3 mac-list-item">
                 <div>
-                    <a href="{{ url_for('view_ticket', ticket_id=ticket.id) }}"
+                    <a href="{{ url_for('tickets.view', ticket_id=ticket.id) }}"
                         class="fw-medium text-body text-decoration-none">
                         {{ ticket.description[:60] }}{% if ticket.description|length > 60 %}…{% endif %}
                     </a>
@@ -167,7 +167,7 @@
             <h5>Заявок пока нет</h5>
             <p class="text-muted mb-4">Если у вас возникла проблема с техникой — подайте заявку в IT-отдел</p>
             <div>
-                <a href="{{ url_for('new_ticket') }}" class="btn btn-create">Подать первую заявку</a>
+                <a href="{{ url_for('tickets.new') }}" class="btn btn-create">Подать первую заявку</a>
             </div>
         </div>
         {% endif %}
@@ -177,19 +177,19 @@
         <div class="card p-4">
             <h6 class="fw-semibold mb-3">Что я могу сделать?</h6>
             <div class="d-flex flex-column gap-2">
-                <a href="{{ url_for('new_ticket') }}" class="quick-action-btn">
+                <a href="{{ url_for('tickets.new') }}" class="quick-action-btn">
                     <span>➕</span> Подать заявку
                 </a>
-                <a href="{{ url_for('tickets') }}" class="quick-action-btn">
+                <a href="{{ url_for('tickets.index') }}" class="quick-action-btn">
                     <span>📋</span> Мои заявки
                 </a>
-                <a href="{{ url_for('articles') }}" class="quick-action-btn">
+                <a href="{{ url_for('articles.index') }}" class="quick-action-btn">
                     <span>📚</span> База знаний
                 </a>
-                <a href="{{ url_for('todos') }}" class="quick-action-btn">
+                <a href="{{ url_for('todos.index') }}" class="quick-action-btn">
                     <span>✏️</span> Мои задачи
                 </a>
-                <a href="{{ url_for('profile') }}" class="quick-action-btn">
+                <a href="{{ url_for('main.profile') }}" class="quick-action-btn">
                     <span>⚙️</span> Профиль
                 </a>
             </div>

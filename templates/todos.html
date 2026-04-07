@@ -4,18 +4,18 @@
 
 <h2 class="mb-2">Мои задачи</h2>
 <div class="mb-4">
-    <a href="{{ url_for('new_todo') }}" class="btn btn-create">+ Новая задача</a>
+    <a href="{{ url_for('todos.new') }}" class="btn btn-create">+ Новая задача</a>
 </div>
 
 <!-- Фильтр -->
 <div class="d-flex gap-2 mb-4">
-    <a href="{{ url_for('todos') }}" class="btn btn-sm {{ 'btn-primary' if not status_filter else 'btn-outline-secondary' }}">
+    <a href="{{ url_for('todos.index') }}" class="btn btn-sm {{ 'btn-primary' if not status_filter else 'btn-outline-secondary' }}">
         Все
     </a>
-    <a href="{{ url_for('todos', status='pending') }}" class="btn btn-sm {{ 'btn-primary' if status_filter == 'pending' else 'btn-outline-secondary' }}">
+    <a href="{{ url_for('todos.index', status='pending') }}" class="btn btn-sm {{ 'btn-primary' if status_filter == 'pending' else 'btn-outline-secondary' }}">
         Активные
     </a>
-    <a href="{{ url_for('todos', status='done') }}" class="btn btn-sm {{ 'btn-primary' if status_filter == 'done' else 'btn-outline-secondary' }}">
+    <a href="{{ url_for('todos.index', status='done') }}" class="btn btn-sm {{ 'btn-primary' if status_filter == 'done' else 'btn-outline-secondary' }}">
         Выполненные
     </a>
 </div>
@@ -25,7 +25,7 @@
     {% for todo in todos %}
     <div class="d-flex align-items-center justify-content-between px-4 py-3 mac-list-item {{ 'opacity-60' if todo.done }}">
         <div class="d-flex align-items-center gap-3 flex-grow-1">
-            <a href="{{ url_for('toggle_todo', todo_id=todo.id) }}" class="todo-checkbox {{ 'done' if todo.done }}" title="{{ 'Отметить не выполненным' if todo.done else 'Отметить выполненным' }}">
+            <a href="{{ url_for('todos.toggle', todo_id=todo.id) }}" class="todo-checkbox {{ 'done' if todo.done }}" title="{{ 'Отметить не выполненным' if todo.done else 'Отметить выполненным' }}">
                 {{ '✓' if todo.done else '' }}
             </a>
             <div>
@@ -34,8 +34,8 @@
             </div>
         </div>
         <div class="btn-group ms-3">
-            <a href="{{ url_for('edit_todo', todo_id=todo.id) }}" class="btn btn-sm btn-edit px-3">✏️</a>
-            <a href="{{ url_for('delete_todo', todo_id=todo.id) }}" class="btn btn-sm btn-delete px-3"
+            <a href="{{ url_for('todos.edit', todo_id=todo.id) }}" class="btn btn-sm btn-edit px-3">✏️</a>
+            <a href="{{ url_for('todos.delete', todo_id=todo.id) }}" class="btn btn-sm btn-delete px-3"
                 onclick="return confirm('Удалить задачу?');">🗑</a>
         </div>
     </div>
@@ -47,7 +47,7 @@
     <h5>Задач нет</h5>
     <p class="text-muted mb-4">Добавьте задачи в личный список дел</p>
     <div>
-        <a href="{{ url_for('new_todo') }}" class="btn btn-create">Добавить задачу</a>
+        <a href="{{ url_for('todos.new') }}" class="btn btn-create">Добавить задачу</a>
     </div>
 </div>
 {% endif %}

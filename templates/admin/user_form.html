@@ -2,67 +2,180 @@
 {% block title %}{{ 'Редактирование' if edit else 'Новый пользователь' }} — IT Helpdesk{% endblock %}
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-4">
-    <h2 class="mb-0">{{ 'Редактирование пользователя' if edit else 'Новый пользователь' }}</h2>
-    <a href="{{ url_for('admin_users') }}" class="btn btn-sm btn-back">← Назад</a>
+    <div class="d-flex align-items-center gap-3">
+        <h2 class="mb-0">{{ 'Редактирование' if edit else 'Создание' }} пользователя</h2>
+        {% if edit %}
+            {% if user.is_from_ad %}
+                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill d-flex align-items-center gap-2" style="font-size: 13px;">
+                    <span class="d-inline-block rounded-circle bg-primary" style="width: 8px; height: 8px;"></span>
+                    Синхронизация с AD активна
+                </span>
+            {% else %}
+                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-3 py-2 rounded-pill d-flex align-items-center gap-2" style="font-size: 13px;">
+                    <span class="d-inline-block rounded-circle bg-secondary" style="width: 8px; height: 8px;"></span>
+                    Локальная учётная запись
+                </span>
+            {% endif %}
+        {% endif %}
+    </div>
+    <a href="{{ url_for('admin.users') }}" class="btn btn-sm btn-back px-3 border-0">← К списку</a>
 </div>
 
-<div class="card p-4" style="max-width:600px;">
-    <form method="post">
-        {{ form.hidden_tag() }}
-        <div class="row g-3">
-            <div class="col-12 col-md-6">
-                {{ form.username.label(class="form-label") }}
-                {{ form.username(class="form-control") }}
-                {% if form.username.errors %}<div class="form-text text-danger">{{ form.username.errors[0] }}</div>{% endif %}
-            </div>
-            <div class="col-12 col-md-6">
-                {{ form.full_name.label(class="form-label") }}
-                {{ form.full_name(class="form-control", placeholder="Иванов Иван Иванович") }}
-            </div>
-            <div class="col-12 col-md-6">
-                {{ form.role.label(class="form-label") }}
-                {{ form.role(class="form-select") }}
-            </div>
-            <div class="col-12 col-md-6">
-                {{ form.department.label(class="form-label") }}
-                {{ form.department(class="form-control", placeholder="Бухгалтерия") }}
-            </div>
-            <div class="col-12 col-md-6">
-                {{ form.phone.label(class="form-label") }}
-                {{ form.phone(class="form-control phone-mask", placeholder="10-10", maxlength="5") }}
-            </div>
-            <div class="col-12 col-md-6">
-                {{ form.computer_name.label(class="form-label") }}
-                {{ form.computer_name(class="form-control", placeholder="00zu") }}
-            </div>
-            <div class="col-12">
-                {{ form.email.label(class="form-label") }}
-                {{ form.email(class="form-control") }}
-            </div>
-            <div class="col-12">
-                {{ form.password.label(class="form-label") }}
-                {{ form.password(class="form-control") }}
-                {% if edit %}
-                <div class="form-text">Оставьте пустым, чтобы не менять пароль.</div>
-                <div class="form-text text-info small">💡 Смена пароля переключит пользователя на локальную авторизацию (отключит AD).</div>
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 20px;">
+            <div class="card-body p-0">
+                {% if edit and user.is_from_ad %}
+                <div class="alert alert-warning border-0 rounded-0 m-0 py-3 px-4 d-flex align-items-center gap-3" style="background-color: #fff9db; color: #856404;">
+                    <div class="fs-4">⚠️</div>
+                    <div class="small fw-medium">
+                        Внимание: Изменения полей (ФИО, Email, Отдел, Телефон) будут автоматически применены в <strong>Active Directory</strong>.
+                    </div>
+                </div>
                 {% endif %}
-                {% if form.password.errors %}<div class="form-text text-danger">{{ form.password.errors[0] }}</div>{% endif %}
+
+                <form method="post" class="p-4 p-md-5">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Секция: Основные -->
+                    <div class="mb-5">
+                        <h6 class="text-uppercase text-muted fw-bold mb-4" style="font-size: 12px; letter-spacing: 1px;">Системные данные</h6>
+                        <div class="row g-4">
+                            <div class="col-md-5">
+                                {{ form.username.label(class="form-label fw-semibold") }}
+                                {{ form.username(class="form-control rounded-3 py-2", placeholder="Логин...") }}
+                                {% if form.username.errors %}<div class="form-text text-danger">{{ form.username.errors[0] }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.role.label(class="form-label fw-semibold") }}
+                                {{ form.role(class="form-select rounded-3 py-2") }}
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end pb-2">
+                                <div class="form-check">
+                                    {{ form.is_active(class="form-check-input") }}
+                                    {{ form.is_active.label(class="form-check-label fw-medium") }}
+                                </div>
+                            </div>
+                            {% if user and user.is_from_ad %}
+                            <div class="col-md-5 d-flex align-items-end pb-2">
+                                <div class="form-check">
+                                    {{ form.password_never_expires(class="form-check-input") }}
+                                    {{ form.password_never_expires.label(class="form-check-label fw-medium text-warning") }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Секция: Профиль (то что уходит в AD) -->
+                    <div class="mb-5">
+                        <h6 class="text-uppercase text-primary fw-bold mb-4" style="font-size: 12px; letter-spacing: 1px;">Данные сотрудника (AD)</h6>
+                        <div class="row g-4">
+                            <div class="col-12">
+                                {{ form.full_name.label(class="form-label fw-semibold") }}
+                                {{ form.full_name(class="form-control rounded-3 py-2", placeholder="ФИО сотрудника...") }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.department.label(class="form-label fw-semibold") }}
+                                {{ form.department(class="form-control rounded-3 py-2", placeholder="Департамент...") }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.email.label(class="form-label fw-semibold") }}
+                                {{ form.email(class="form-control rounded-3 py-2", placeholder="Email...") }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.phone.label(class="form-label fw-semibold") }}
+                                {{ form.phone(class="form-control rounded-3 py-2 phone-mask", placeholder="Внутренний номер...") }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.computer_name.label(class="form-label fw-semibold") }}
+                                {{ form.computer_name(class="form-control rounded-3 py-2", placeholder="Имя ПК...") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if not user.is_from_ad %}
+                    <!-- Секция: Безопасность (Только для локальных аккаунтов) -->
+                    <div class="mb-5">
+                        <h6 class="text-uppercase text-muted fw-bold mb-4" style="font-size: 12px; letter-spacing: 1px;">Безопасность (Локально)</h6>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                {{ form.password.label(class="form-label fw-semibold") }}
+                                {{ form.password(class="form-control rounded-3 py-2", id="password") }}
+                                <div class="form-text small opacity-75">Оставьте пустым для сохранения текущего</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Повтор пароля</label>
+                                <input type="password" id="confirm_password" class="form-control rounded-3 py-2" placeholder="Повторите ввод...">
+                                <div id="pwd_match_msg" class="form-text small" style="display:none;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex gap-3 mt-4 pt-4 border-top">
+                        <button type="submit" id="submitBtn" class="btn btn-primary px-5 py-2 rounded-3 shadow-sm border-0">
+                            {{ 'Применить изменения' if edit else 'Создать аккаунт' }}
+                        </button>
+                        <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary px-4 py-2 rounded-3 border-0">Отмена</a>
+                        <input type="hidden" name="{{ form.is_from_ad.name }}" value="{{ 'y' if user.is_from_ad else '' }}">
+                    </div>
+                </form>
             </div>
-            <div class="col-12 d-flex gap-4">
-                <div class="form-check">
-                    {{ form.is_active(class="form-check-input") }}
-                    {{ form.is_active.label(class="form-check-label") }}
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm p-4" style="border-radius: 20px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+            <h6 class="fw-bold mb-3">Справка</h6>
+            <div class="small text-muted d-grid gap-3">
+                <div class="d-flex gap-2">
+                    <span class="text-primary">●</span>
+                    <span>Для AD-пользователей пароли управляются строго на <strong>контроллере домена</strong>. Портал только считывает их.</span>
                 </div>
-                <div class="form-check">
-                    {{ form.is_from_ad(class="form-check-input") }}
-                    {{ form.is_from_ad.label(class="form-check-label") }}
+                <div class="d-flex gap-2">
+                    <span class="text-primary">●</span>
+                    <span>Поле <strong>Имя ПК</strong> используется для автоматического подставления в заявки и пинга.</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <span class="text-info">●</span>
+                    <span>Если снять отметку <strong>"Активен"</strong>, пользователь потеряет доступ к порталу немедленно.</span>
                 </div>
             </div>
         </div>
-        <div class="d-flex gap-2 mt-4">
-            {{ form.submit(class="btn btn-save") }}
-            <a href="{{ url_for('admin_users') }}" class="btn btn-back">Отмена</a>
-        </div>
-    </form>
+    </div>
 </div>
+
+<script>
+    const pwd = document.getElementById('password');
+    const cpwd = document.getElementById('confirm_password');
+    const msg = document.getElementById('pwd_match_msg');
+    const btn = document.getElementById('submitBtn');
+
+    function validate() {
+        const p = pwd.value;
+        const c = cpwd.value;
+
+        if (p === "" && c === "") {
+            msg.style.display = 'none';
+            btn.disabled = false;
+            return;
+        }
+        
+        if (p === c && p !== "") {
+            msg.textContent = '✅ Пароли совпадают';
+            msg.className = 'form-text small text-success';
+            msg.style.display = 'block';
+            btn.disabled = false;
+        } else {
+            msg.textContent = '❌ Пароли должны совпадать';
+            msg.className = 'form-text small text-danger';
+            msg.style.display = 'block';
+            btn.disabled = true;
+        }
+    }
+
+    pwd.addEventListener('input', validate);
+    cpwd.addEventListener('input', validate);
+</script>
 {% endblock %}

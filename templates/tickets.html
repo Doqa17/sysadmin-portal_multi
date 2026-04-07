@@ -4,7 +4,7 @@
 
 <h2 class="mb-2">{% if current_user.is_admin %}Все заявки{% else %}Мои заявки{% endif %}</h2>
 <div class="mb-4">
-    <a class="btn btn-create" href="{{ url_for('new_ticket') }}">+ Новая заявка</a>
+    <a class="btn btn-create" href="{{ url_for('tickets.new') }}">+ Новая заявка</a>
 </div>
 
 <!-- Фильтры -->
@@ -82,7 +82,7 @@
 
         {% if current_status or search_query or current_category or current_assignee %}
         <div class="col-auto">
-            <a href="{{ url_for('tickets') }}" class="btn btn-outline-secondary btn-sm">✕ Сбросить</a>
+            <a href="{{ url_for('tickets.index') }}" class="btn btn-outline-secondary btn-sm">✕ Сбросить</a>
         </div>
         {% endif %}
     </div>
@@ -94,7 +94,7 @@
         {% for ticket in tickets %}
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 py-3 px-4 mac-list-item">
             <div class="flex-grow-1 min-width-0">
-                <a href="{{ url_for('view_ticket', ticket_id=ticket.id) }}"
+                <a href="{{ url_for('tickets.view', ticket_id=ticket.id) }}"
                    class="text-decoration-none fs-6 fw-medium mb-1 d-block text-body">
                     #{{ ticket.id }} — {{ ticket.description[:80] }}{% if ticket.description|length > 80 %}…{% endif %}
                 </a>
@@ -126,15 +126,15 @@
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4">
                         {% for status in statuses %}
                         <li><a class="dropdown-item rounded-3 mx-1" style="width:auto;"
-                            href="{{ url_for('set_ticket_status', ticket_id=ticket.id, status_id=status.id) }}">
-                            <span class="badge status-badge-{{ status.color }} me-1">{{ status.name }}</span>
-                        </a></li>
+                            href="{{ url_for('tickets.set_status', ticket_id=ticket.id, status_id=status.id) }}">
+                                <span class="status-dot bg-{{ status.color }}"></span> {{ status.name }}
+                            </a></li>
                         {% endfor %}
                     </ul>
                 </div>
                 <div class="btn-group">
-                    <a href="{{ url_for('edit_ticket', ticket_id=ticket.id) }}" class="btn btn-sm btn-edit px-3" title="Редактировать">✏️</a>
-                    <a href="{{ url_for('delete_ticket', ticket_id=ticket.id) }}" class="btn btn-sm btn-delete px-3"
+                    <a href="{{ url_for('tickets.edit', ticket_id=ticket.id) }}" class="btn btn-sm btn-edit px-3" title="Редактировать">✏️</a>
+                    <a href="{{ url_for('tickets.delete', ticket_id=ticket.id) }}" class="btn btn-sm btn-delete px-3"
                         onclick="return confirm('Удалить заявку #{{ ticket.id }}?');" title="Удалить">🗑</a>
                 </div>
                 {% else %}
@@ -146,7 +146,7 @@
         <div class="text-center p-5 text-muted">
             <div class="fs-1 mb-3 opacity-50">📭</div>
             <h5>Заявок не найдено</h5>
-            <p>Попробуйте изменить параметры поиска или <a href="{{ url_for('new_ticket') }}">создайте новую заявку</a>.</p>
+            <p>Попробуйте изменить параметры поиска или <a href="{{ url_for('tickets.new') }}">создайте новую заявку</a>.</p>
         </div>
         {% endfor %}
     </div>

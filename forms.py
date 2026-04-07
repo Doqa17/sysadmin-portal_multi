@@ -1,7 +1,8 @@
 from flask_wtf import FlaskForm
 from wtforms import (
     StringField, TextAreaField, PasswordField, SubmitField,
-    SelectField, MultipleFileField, BooleanField, EmailField
+    SelectField, MultipleFileField, BooleanField, EmailField,
+    IntegerField, HiddenField
 )
 from wtforms.validators import DataRequired, Length, Optional, Email, EqualTo
 from flask_wtf.file import FileAllowed
@@ -49,12 +50,13 @@ class AdminUserForm(FlaskForm):
     email = StringField('Email', validators=[Optional(), Length(max=120)])
     password = PasswordField('Пароль', validators=[Optional()])
     is_from_ad = BooleanField('Из Active Directory', default=False)
+    password_never_expires = BooleanField('Пароль не имеет срока действия (AD)', default=False)
     is_active = BooleanField('Активен', default=True)
     submit = SubmitField('Сохранить')
 
 
 class TicketForm(FlaskForm):
-    category_id = SelectField('Категория', coerce=int, validators=[DataRequired()])
+    category_id = SelectField('Категория', coerce=int, validators=[Optional()])
     description = TextAreaField('Описание проблемы', validators=[DataRequired()])
     contact_phone = StringField('Телефон для связи', validators=[Optional(), Length(max=20)])
     contact_computer = StringField('Имя компьютера', validators=[Optional(), Length(max=100)])
@@ -63,7 +65,7 @@ class TicketForm(FlaskForm):
 
 class AdminTicketForm(FlaskForm):
     author_id = SelectField('От имени пользователя', coerce=int, validators=[DataRequired()])
-    category_id = SelectField('Категория', coerce=int, validators=[DataRequired()])
+    category_id = SelectField('Категория', coerce=int, validators=[Optional()])
     description = TextAreaField('Описание проблемы', validators=[DataRequired()])
     resolution = TextAreaField('Решение', validators=[Optional()])
     contact_phone = StringField('Телефон для связи', validators=[Optional(), Length(max=20)])
@@ -100,5 +102,22 @@ class ADSettingsForm(FlaskForm):
                             render_kw={'placeholder': 'CN=ldap_reader,DC=company,DC=local'})
     bind_password = PasswordField('Bind Password', validators=[Optional()])
     search_filter = StringField('Фильтр поиска', validators=[Optional(), Length(max=300)])
+    timezone_offset = IntegerField('Часовой пояс (UTC offset)', default=8, render_kw={'placeholder': 'Например, 3 для МСК'})
     is_active = BooleanField('Использовать AD для аутентификации')
     submit = SubmitField('Сохранить')
+
+
+
+class ADUserCreateForm(FlaskForm):
+    first_name = StringField('Имя', validators=[DataRequired(), Length(max=50)])
+    last_name = StringField('Фамилия', validators=[DataRequired(), Length(max=50)])
+    username = StringField('Логин (по-английски)', validators=[DataRequired(), Length(max=50)])
+    password = PasswordField('Начальный пароль', validators=[DataRequired()])
+    email = StringField('Email', validators=[Optional(), Email()])
+    department = StringField('Отдел', validators=[Optional(), Length(max=100)])
+    phone = StringField('Телефон', validators=[Optional(), Length(max=20)])
+    computer_name = StringField('Имя ПК', validators=[Optional(), Length(max=50)])
+    target_ou = SelectField('Расположение (OU / Папка)', validators=[DataRequired()])
+    groups_data = HiddenField('Группы')
+    submit = SubmitField('Создать пользователя в AD')
+

@@ -6,14 +6,21 @@ db = SQLAlchemy()
 
 
 def get_now():
-    # Возвращает текущее время в часовом поясе UTC+8 (Пекин)
-    return datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8)))
+    """Централизованная функция получения времени с учетом часового пояса из настроек."""
+    from models import ADSettings
+    try:
+        settings = ADSettings.query.first()
+        offset = settings.timezone_offset if settings and settings.timezone_offset is not None else 8
+    except:
+        offset = 8
+    
+    return datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=offset)))
 
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
+    password = db.Column(db.String(200), nullable=True) # Позволяет AD-пользователям быть без локального пароля
     full_name = db.Column(db.String(150))
     role = db.Column(db.String(20), default='employee')  # 'superadmin', 'admin' or 'employee'
     department = db.Column(db.String(100))
@@ -133,4 +140,5 @@ class ADSettings(db.Model):
         db.String(300),
         default='(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))'
     )
+    timezone_offset = db.Column(db.Integer, default=8) # Новое поле для часового пояса
     is_active = db.Column(db.Boolean, default=False)

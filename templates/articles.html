@@ -2,7 +2,7 @@
 {% block content %}
 <h2 class="mb-2">База знаний</h2>
 <div class="mb-4">
-    <a class="btn btn-create" href="{{ url_for('new_article') }}">+ Новая статья</a>
+    <a class="btn btn-create" href="{{ url_for('articles.new') }}">+ Новая статья</a>
 </div>
 
 <form method="get" class="card p-3 mb-4 border-0 shadow-sm filter-container" id="filterForm">
@@ -58,7 +58,7 @@
             {% endif %}
             <div class="card-body">
                 <h5 class="card-title">
-                    <a href="{{ url_for('view_article', article_id=article.id) }}">{{ article.title }}</a>
+                    <a href="{{ url_for('articles.view', article_id=article.id) }}">{{ article.title }}</a>
                 </h5>
                 <p class="card-text"><strong>Категория:</strong> {{ article.category.name if article.category else "—"
                     }}</p>

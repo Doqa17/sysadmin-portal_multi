@@ -9,11 +9,11 @@
     </div>
     <div class="d-flex gap-2">
         {% if current_user.is_admin %}
-        <a href="{{ url_for('edit_ticket', ticket_id=ticket.id) }}" class="btn btn-sm btn-edit">✏️ Редактировать</a>
-        <a href="{{ url_for('delete_ticket', ticket_id=ticket.id) }}" class="btn btn-sm btn-delete"
+        <a href="{{ url_for('tickets.edit', ticket_id=ticket.id) }}" class="btn btn-sm btn-edit">✏️ Редактировать</a>
+        <a href="{{ url_for('tickets.delete', ticket_id=ticket.id) }}" class="btn btn-sm btn-delete"
             onclick="return confirm('Удалить заявку?');">🗑 Удалить</a>
         {% endif %}
-        <a href="{{ url_for('tickets') }}" class="btn btn-sm btn-back">← Назад</a>
+        <a href="{{ url_for('tickets.index') }}" class="btn btn-sm btn-back">← Назад</a>
     </div>
 </div>
 
@@ -31,7 +31,7 @@
                 <ul class="dropdown-menu shadow border-0 rounded-4">
                     {% for status in statuses %}
                     <li><a class="dropdown-item rounded-3 mx-1" style="width:auto;"
-                            href="{{ url_for('set_ticket_status', ticket_id=ticket.id, status_id=status.id) }}">
+                            href="{{ url_for('tickets.set_status', ticket_id=ticket.id, status_id=status.id) }}">
                             <span class="badge status-badge-{{ status.color }} me-1">{{ status.name }}</span>
                         </a></li>
                     {% endfor %}
@@ -68,7 +68,7 @@
         <div class="col-12 col-md-6">
             <div class="small text-muted mb-1">Связанная статья</div>
             <div class="fw-semibold">
-                <a href="{{ url_for('view_article', article_id=ticket.article.id) }}">{{ ticket.article.title }}</a>
+                <a href="{{ url_for('articles.view', article_id=ticket.article.id) }}">{{ ticket.article.title }}</a>
             </div>
         </div>
         {% endif %}
@@ -92,7 +92,7 @@
 <div class="card p-4 mb-3 border-dashed">
     <div class="text-muted text-center py-2">
         Решение ещё не добавлено.
-        <a href="{{ url_for('edit_ticket', ticket_id=ticket.id) }}">Добавить решение →</a>
+        <a href="{{ url_for('tickets.edit', ticket_id=ticket.id) }}">Добавить решение →</a>
     </div>
 </div>
 {% endif %}

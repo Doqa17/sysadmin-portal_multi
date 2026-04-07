@@ -16,7 +16,7 @@
     <div class="col-lg-8">
         <div class="card p-4">
             <h5 class="fw-semibold mb-4">Настройки подключения</h5>
-            <form method="post" action="{{ url_for('ad_settings') }}">
+            <form method="post" action="{{ url_for('admin.ad_settings') }}">
                 {{ form.hidden_tag() }}
                 <div class="row g-3">
                     <div class="col-12">
@@ -36,10 +36,15 @@
                         {{ form.bind_password.label(class="form-label") }}
                         {{ form.bind_password(class="form-control", placeholder="Оставьте пустым, чтобы не менять") }}
                     </div>
-                    <div class="col-12">
+                    <div class="col-12 col-md-6">
                         {{ form.search_filter.label(class="form-label") }}
                         {{ form.search_filter(class="form-control font-monospace small") }}
-                        <div class="form-text">LDAP-фильтр для выбора пользователей. Текущий фильтр исключает отключённые аккаунты AD.</div>
+                        <div class="form-text">LDAP-фильтр для выбора пользователей.</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        {{ form.timezone_offset.label(class="form-label") }}
+                        {{ form.timezone_offset(class="form-control", type="number") }}
+                        <div class="form-text">Смещение UTC (напр. 3 для Москвы, 8 для Иркутска)</div>
                     </div>
                     <div class="col-12">
                         <div class="form-check form-switch">
@@ -62,7 +67,7 @@
             <div class="d-flex flex-column gap-3">
                 <div>
                     <p class="text-muted small mb-2">Проверить подключение к AD-серверу</p>
-                    <form method="post" action="{{ url_for('ad_test') }}">
+                    <form method="post" action="{{ url_for('admin.ad_test') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-outline-primary w-100">
                             🔌 Проверить подключение
@@ -72,7 +77,7 @@
                 <hr class="my-1">
                 <div>
                     <p class="text-muted small mb-2">Синхронизировать пользователей из AD. Новые пользователи будут созданы с ролью «Сотрудник».</p>
-                    <form method="post" action="{{ url_for('ad_sync') }}"
+                    <form method="post" action="{{ url_for('admin.ad_sync') }}"
                         onsubmit="return confirm('Запустить синхронизацию пользователей из Active Directory?');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-create w-100">
