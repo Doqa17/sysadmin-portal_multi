@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Аудит — IT Helpdesk{% endblock %}
+{% block content %}
+{% from 'macros.html' import render_avatar, render_role_badge %}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h2 class="mb-0">Журнал аудита</h2>
+    <div class="text-muted small">Записей: {{ logs.total }}</div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">Когда</th>
+                    <th>Администратор</th>
+                    <th>Действие</th>
+                    <th>Объект</th>
+                    <th>Описание</th>
+                    <th class="pe-4 text-end"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs.items %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="fw-semibold small">{{ log.timestamp.strftime('%d.%m.%Y') }}</div>
+                        <div class="text-muted x-small">{{ log.timestamp.strftime('%H:%M:%S') }}</div>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            {{ render_avatar(log.user.display_name if log.user else 'Система', 'sm') }}
+                            <div>
+                                <div class="fw-semibold small">{{ log.user.username if log.user else 'System' }}</div>
+                                {% if log.user %}
+                                    {{ render_role_badge(log.user.role, short=True) }}
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary small">Авто</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if log.action == 'PASSWORD' %}
+                            <span class="badge bg-primary-subtle text-primary">Пароль</span>
+                        {% elif log.action == 'POWER' %}
+                            <span class="badge bg-danger-subtle text-danger">Питание</span>
+                        {% elif log.action == 'ACCOUNT' %}
+                            <span class="badge bg-warning-subtle text-warning">Аккаунт</span>
+                        {% elif log.action == 'SYNC' %}
+                            <span class="badge bg-info-subtle text-info">Синхро</span>
+                        {% elif log.action == 'SETTINGS' %}
+                            <span class="badge bg-secondary-subtle text-secondary">Настройки</span>
+                        {% else %}
+                            <span class="badge bg-light text-dark">{{ log.action }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.target %}
+                            <code class="small text-break">{{ log.target }}</code>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="text-truncate small" style="max-width: 300px;">
+                            {{ log.description.split('\n')[0] }}
+                            {% if '\n' in log.description %}...{% endif %}
+                        </div>
+                    </td>
+                    <td class="pe-4 text-end">
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill" 
+                                onclick="showLogDetails('{{ log.action }}', '{{ log.target or '-' }}', `{{ log.description }}`, '{{ log.timestamp.strftime('%d.%m.%Y %H:%M:%S') }}', '{{ log.ip_address }}')">
+                            Детали
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">Событий пока нет</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if logs.pages > 1 %}
+    <div class="card-footer bg-white py-3">
+        <nav>
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+                <li class="page-item {{ 'disabled' if not logs.has_prev }}">
+                    <a class="page-link" href="{{ url_for('admin.audit_logs', page=logs.prev_num) if logs.has_prev else '#' }}">← Назад</a>
+                </li>
+                {% for page_num in logs.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {{ 'active' if page_num == logs.page }}">
+                            <a class="page-link" href="{{ url_for('admin.audit_logs', page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {{ 'disabled' if not logs.has_next }}">
+                    <a class="page-link" href="{{ url_for('admin.audit_logs', page=logs.next_num) if logs.has_next else '#' }}">Вперед →</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="logDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-bottom-subtle">
+                <h5 class="modal-title fw-bold" id="logModalTitle">Детали действия</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <div class="text-muted x-small text-uppercase">Время</div>
+                        <div id="logModalTime" class="small fw-semibold"></div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-muted x-small text-uppercase">IP инициатора</div>
+                        <div id="logModalIP" class="small fw-semibold text-primary"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted x-small text-uppercase">Объект</div>
+                    <div id="logModalTarget" class="fw-bold"></div>
+                </div>
+                <div>
+                    <div class="text-muted x-small text-uppercase mb-1">Полное описание</div>
+                    <pre id="logModalDescription" class="bg-light p-3 rounded small text-wrap mb-0" style="white-space: pre-wrap; font-family: inherit; font-size: 0.85rem;"></pre>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.x-small { font-size: 0.75rem; }
+</style>
+
+<script>
+function showLogDetails(action, target, description, time, ip) {
+    document.getElementById('logModalTitle').innerText = 'Лог: ' + action;
+    document.getElementById('logModalTarget').innerText = target;
+    document.getElementById('logModalDescription').innerText = description;
+    document.getElementById('logModalTime').innerText = time;
+    document.getElementById('logModalIP').innerText = ip;
+    var modal = new bootstrap.Modal(document.getElementById('logDetailsModal'));
+    modal.show();
+}
+</script>
+
+{% endblock %}

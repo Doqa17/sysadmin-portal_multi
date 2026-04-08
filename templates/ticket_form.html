@@ -103,6 +103,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const ts = authorSelect.tomselect;
 
+    // Clear selection on every click to allow fresh search
+    ts.on('dropdown_open', function() {
+        ts.clear();
+    });
+
+    ts.control.addEventListener('click', function() {
+        ts.clear();
+    });
+
     ts.on('change', function (userId) {
         if (!userId || userId === '0') return;
 
@@ -111,10 +120,8 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(data => {
                 const phone = document.getElementById('contact_phone');
                 const computer = document.getElementById('contact_computer');
-                if (phone && !phone.value) phone.value = data.phone;
-                else if (phone) phone.value = data.phone;
-                if (computer && !computer.value) computer.value = data.computer_name;
-                else if (computer) computer.value = data.computer_name;
+                if (phone) phone.value = data.phone || '';
+                if (computer) computer.value = data.computer_name || '';
             })
             .catch(err => console.warn('Failed to load user info:', err));
     });

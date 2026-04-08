@@ -59,24 +59,43 @@
                 </div>
 
                 <div class="stat-item position-relative">
-                    <div class="small text-muted mb-1 d-flex justify-content-between align-items-center">
+                    <div class="small text-muted mb-2 d-flex justify-content-between align-items-center">
                         <span>Рабочий компьютер</span>
-                        {% if user.computer_name %}
-                        <button class="btn btn-sm btn-link p-0 text-muted text-decoration-none"
-                            onclick="navigator.clipboard.writeText('{{ user.computer_name }}'); this.innerText='✅'; setTimeout(()=>this.innerText='📋', 1500)"
-                            title="Копировать">📋</button>
-                        {% endif %}
                     </div>
-                    <div class="fw-bold d-flex align-items-center gap-2 overflow-hidden">
-                        <span class="text-truncate d-block" style="max-width: 100%; flex-shrink: 1;"
-                            title="{{ user.computer_name or '—' }}">
-                            {{ user.computer_name or '—' }}
-                        </span>
-                        {% if user.computer_name %}
-                        <span id="pcStatus" class="badge bg-light text-dark shadow-sm border ms-auto"
-                            style="font-size: 0.65em; flex-shrink: 0;">Проверка...</span>
-                        {% endif %}
+                    {% if user.computer_name %}
+                    <div class="d-flex align-items-center glass-card p-2 px-3 border border-white border-opacity-10 mb-2" style="background: rgba(255,255,255,0.03);">
+                        <code class="fw-bold text-truncate flex-grow-1" 
+                              style="font-size: 0.9em; color: var(--bs-heading-color); cursor: pointer;"
+                              onclick="copySimple('{{ user.computer_name }}', this)"
+                              title="Нажмите, чтобы скопировать">
+                            {{ user.computer_name }}
+                        </code>
+                        <span class="status-dot-ping shadow-sm ms-2" id="pingDot" style="width:7px; height:7px; border-radius:50%; background:#94a3b8; flex-shrink:0;"></span>
                     </div>
+
+                    <div class="tool-button-group mt-3">
+                        <!-- Ping -->
+                        <button class="btn-premium d-flex align-items-center justify-content-center gap-2" 
+                                onclick="pingComputer('{{ user.computer_name }}')" id="btn-ping"
+                                style="--hover-color: #10b981;">
+                            <span>📡</span> <span class="small fw-bold">Пинг <small id="ping-indicator"></small></span>
+                        </button>
+                        <!-- Reboot -->
+                        <button class="btn-premium d-flex align-items-center justify-content-center gap-2" 
+                                onclick="powerAction('{{ user.computer_name }}', 'reboot')"
+                                style="color: var(--bs-secondary-color); --hover-color: #3b82f6;">
+                            <span style="opacity: 0.7;">🔄</span> <span class="small fw-bold">Перезагрузка</span>
+                        </button>
+                        <!-- Shutdown -->
+                        <button class="btn-premium d-flex align-items-center justify-content-center gap-2" 
+                                onclick="powerAction('{{ user.computer_name }}', 'shutdown')"
+                                style="color: var(--bs-secondary-color); --hover-color: #ef4444;">
+                            <span style="opacity: 0.7;">🔌</span> <span class="small fw-bold">Выключение</span>
+                        </button>
+                    </div>
+                    {% else %}
+                    <div class="fw-bold text-muted italic small mt-1">Имя ПК не указано</div>
+                    {% endif %}
                 </div>
 
                 <div class="stat-item">
@@ -311,6 +330,9 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
 <script>
     let searchTimeout;
 
@@ -333,13 +355,13 @@
                             item.className = 'list-group-item list-group-item-action small py-2 d-flex justify-content-between align-items-center';
                             item.innerHTML = `<span>📂 ${group.cn}</span> <span class="badge bg-primary rounded-pill">+</span>`;
                             item.onclick = () => addToGroup({{ user.id }}, group.dn, group.cn);
-                        suggestions.appendChild(item);
-                    });
-            suggestions.style.display = 'block';
-        } else { suggestions.style.display = 'none'; }
-            });
-    }, 300);
-}
+                            suggestions.appendChild(item);
+                        });
+                        suggestions.style.display = 'block';
+                    } else { suggestions.style.display = 'none'; }
+                });
+        }, 300);
+    }
 
     function addToGroup(userId, groupDn, groupName) {
         if (!confirm(`Добавить пользователя в "${groupName}"?`)) return;
@@ -404,7 +426,6 @@
             });
     }
 
-
     function extendPassword(userId) {
         if (!confirm('Продлить срок пароля?')) return;
         fetch('/api/tools/extend-password', {
@@ -439,7 +460,7 @@
     function deleteAdAccount(userId, expectedUsername) {
         const confirmation = prompt(`ВНИМАНИЕ! Это действие навсегда удалит учетную запись.\n\nДля подтверждения введите логин пользователя (${expectedUsername}):`);
 
-        if (confirmation === null) return; // Нажали Отмена
+        if (confirmation === null) return; 
 
         if (confirmation !== expectedUsername) {
             alert('❌ Логин введен неверно. Удаление отменено во избежание ошибки.');
@@ -477,32 +498,73 @@
             });
     }
 
-</script>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        {% if user.computer_name %}
-        fetch('/api/tools/ping-pc', {
+    function copySimple(text, el) {
+        navigator.clipboard.writeText(text).then(function () {
+            const origColor = el.style.color;
+            el.style.color = '#10b981'; // Green
+            const origText = el.innerText;
+            el.innerText = 'Скопировано!';
+            setTimeout(() => {
+                el.style.color = origColor;
+                el.innerText = text;
+            }, 1500);
+        });
+    }
+
+    function powerAction(computer, action) {
+        const actionName = action === 'shutdown' ? 'ВЫКЛЮЧИТЬ' : 'ПЕРЕЗАГРУЗИТЬ';
+        if (!confirm(`⚠️ ВНИМАНИЕ: Вы принудительно хотите ${actionName} компьютер ${computer}?\n\nВсе несохраненные данные пользователя будут потеряны.`)) return;
+
+        fetch('/api/tools/power', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
-            body: JSON.stringify({ computer_name: '{{ user.computer_name }}' })
+            body: JSON.stringify({ computer: computer, action: action })
         })
             .then(r => r.json())
             .then(data => {
-                const statusBadge = document.getElementById('pcStatus');
-                if (data.online) {
-                    statusBadge.className = 'badge bg-success-subtle text-success border border-success shadow-sm';
-                    statusBadge.innerHTML = '<span class="status-dot bg-success" style="width:6px;height:6px;box-shadow:none;"></span> В сети';
+                if (data.success) {
+                    alert('✅ ' + data.message);
                 } else {
-                    statusBadge.className = 'badge bg-danger-subtle text-danger border border-danger shadow-sm';
-                    statusBadge.innerHTML = '<span class="status-dot bg-danger" style="width:6px;height:6px;box-shadow:none;"></span> Недоступен';
+                    alert('❌ ' + data.message);
                 }
-            }).catch(() => {
-                const statusBadge = document.getElementById('pcStatus');
-                statusBadge.className = 'badge bg-light text-muted border shadow-sm';
-                statusBadge.innerHTML = 'Н/Д';
+            })
+            .catch(err => alert('Ошибка при отправке команды'));
+    }
+
+    function pingComputer(computer) {
+        const btn = document.getElementById('btn-ping');
+        const indicator = document.getElementById('ping-indicator');
+        const dot = document.getElementById('pingDot');
+
+        if (btn) btn.disabled = true;
+        if (indicator) indicator.textContent = '⏳';
+
+        fetch('/api/tools/ping', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify({ computer: computer })
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (btn) btn.disabled = false;
+                if (data.alive) {
+                    if (indicator) indicator.innerHTML = '<span class="badge bg-success">Онлайн</span>';
+                    if (dot) dot.style.background = '#10b981';
+                } else {
+                    if (indicator) indicator.innerHTML = '<span class="badge bg-danger">Офлайн</span>';
+                    if (dot) dot.style.background = '#ef4444';
+                }
+            })
+            .catch(() => {
+                if (btn) btn.disabled = false;
+                if (indicator) indicator.innerHTML = '<span class="badge bg-secondary">Ошибка</span>';
             });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        {% if user.computer_name %}
+        pingComputer('{{ user.computer_name }}');
         {% endif %}
     });
 </script>
-
 {% endblock %}

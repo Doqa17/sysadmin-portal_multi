@@ -71,6 +71,12 @@ def update_user_profile(user, form, settings):
     # 2. Update local DB
     from werkzeug.security import generate_password_hash
     
+    changes = []
+    if user.username != form.username.data: changes.append(f"Логин: {user.username} -> {form.username.data}")
+    if user.full_name != form.full_name.data: changes.append(f"ФИО: {user.full_name} -> {form.full_name.data}")
+    if user.role != form.role.data: changes.append(f"Роль: {user.role} -> {form.role.data}")
+    if user.is_active != form.is_active.data: changes.append(f"Активен: {user.is_active} -> {form.is_active.data}")
+    
     user.username = form.username.data
     user.full_name = form.full_name.data
     user.role = form.role.data
@@ -83,6 +89,8 @@ def update_user_profile(user, form, settings):
 
     if form.password.data:
         user.password = generate_password_hash(form.password.data)
+        changes.append("Локальный пароль обновлен")
     
     db.session.commit()
-    return True, 'Данные успешно обновлены'
+    change_text = "\n".join(changes) if changes else "без изменений"
+    return True, f'Данные обновлены:\n{change_text}'

@@ -3,7 +3,7 @@ from flask import render_template, redirect, url_for, flash, request
 from flask_login import current_user
 from werkzeug.security import generate_password_hash
 
-from utils import admin_required
+from utils import admin_required, log_audit
 from forms import AdminUserForm, ADUserCreateForm
 from models import db, User, Ticket, ADSettings, Todo
 from ad_service import (
@@ -80,6 +80,7 @@ def new_ad_user():
     if form.validate_on_submit():
         success, message = provision_ad_user(form, settings)
         if success:
+            log_audit('ACCOUNT', 'Создан новый пользователь в AD', target=form.username.data)
             flash(message, 'success')
             return redirect(url_for('admin.users'))
         else:
@@ -117,6 +118,7 @@ def edit_user(user_id):
         success, message = update_user_profile(user, form, ad_settings)
         
         if success:
+            log_audit('ACCOUNT', message, target=user.username)
             flash(f'{message} и синхронизированы с AD', 'success')
             return redirect(url_for('admin.users'))
         else:
@@ -146,10 +148,13 @@ def delete_user(user_id):
     if has_history:
         user.is_active = False
         db.session.commit()
+        log_audit('ACCOUNT', 'Локальный аккаунт деактивирован (есть история)', target=user.username)
         flash(f'У пользователя {user.display_name} есть история заявок. Он был деактивирован.', 'warning')
     else:
+        username = user.username
         db.session.delete(user)
         db.session.commit()
+        log_audit('ACCOUNT', 'Локальный аккаунт полностью удален', target=username)
         flash(f'Пользователь {user.display_name} успешно удален.', 'success')
         
     return redirect(url_for('admin.users'))

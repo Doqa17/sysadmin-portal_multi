@@ -1,65 +1,103 @@
 {% extends "base.html" %}
 {% block title %}{{ article.title }} — База знаний{% endblock %}
 {% block content %}
-<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+{% from 'macros.html' import render_back_button, render_avatar %}
+
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
     <div>
-        <h2 class="mb-0">{{ article.title }}</h2>
-        <div class="text-muted small mt-1">{{ article.created_at.strftime('%d.%m.%Y в %H:%M') if article.created_at else '' }}</div>
+        <nav aria-label="breadcrumb" class="mb-1">
+            <ol class="breadcrumb mb-0 x-small text-muted text-uppercase fw-bold" style="letter-spacing:0.1em;">
+                <li class="breadcrumb-item"><a href="{{ url_for('articles.index') }}" class="text-decoration-none">База знаний</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ article.category.name if article.category else 'Общее' }}</li>
+            </ol>
+        </nav>
+        <h2 class="mb-0 fw-bold">{{ article.title }}</h2>
     </div>
     <div class="d-flex gap-2">
-        <a href="{{ url_for('articles.edit', article_id=article.id) }}" class="btn btn-sm btn-edit">✏️ Редактировать</a>
-        <a href="{{ url_for('articles.delete', article_id=article.id) }}" class="btn btn-sm btn-delete" onclick="return confirm('Удалить статью?');">🗑 Удалить</a>
-        <a href="{{ url_for('articles.index') }}" class="btn btn-sm btn-back">← Назад</a>
+        {% if current_user.is_admin %}
+        <a href="{{ url_for('articles.edit', article_id=article.id) }}" class="btn glass-card px-3 py-2 text-primary">✏️ Править</a>
+        <a href="{{ url_for('articles.delete', article_id=article.id) }}" class="btn glass-card px-3 py-2 text-danger" 
+           onclick="return confirm('Удалить статью?');">🗑 Удалить</a>
+        {% endif %}
+        {{ render_back_button(url_for('articles.index'), 'Назад') }}
     </div>
 </div>
 
-<div class="card p-4 mb-3">
-    <div class="row g-3">
-        <div class="col-12 col-md-6">
-            <div class="small text-muted mb-1">Категория</div>
-            <div class="fw-semibold">{{ article.category.name if article.category else '—' }}</div>
-        </div>
-        <div class="col-12 col-md-6">
-            <div class="small text-muted mb-1">Автор</div>
-            <div class="fw-semibold">{{ article.author.display_name if article.author else '—' }}</div>
+<div class="row g-4 leading-relaxed">
+    <div class="col-12 col-lg-8">
+        <!-- Content Area -->
+        <div class="glass-card p-4 p-md-5 mb-4">
+            <!-- Images if any -->
+            {% if article.images %}
+            <div class="row g-3 mb-5 overflow-hidden rounded-4">
+                {% for img in article.images %}
+                <div class="col-md-4 col-6">
+                    <div class="ratio ratio-16x9 cursor-zoom-in overflow-hidden rounded-4 hover-lift" 
+                         data-bs-toggle="modal" data-bs-target="#lightboxModal" 
+                         data-img="{{ url_for('static', filename='uploads/' ~ img.filename) }}">
+                        <img src="{{ url_for('static', filename='uploads/' ~ img.filename) }}" class="object-fit-cover w-100 h-100 transition-all" alt="Support Image">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <section class="mb-5">
+                <h4 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                    <span class="opacity-50 fs-5">📋</span> Суть проблемы
+                </h4>
+                <div class="fs-5 text-muted-extra" style="white-space: pre-wrap; line-height:1.7;">{{ article.problem }}</div>
+            </section>
+
+            <section>
+                <h4 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                    <span class="text-success fs-5">✅</span> Решение
+                </h4>
+                <div class="fs-5" style="white-space: pre-wrap; line-height:1.7;">{{ article.solution }}</div>
+            </section>
         </div>
     </div>
-</div>
 
-{% if article.images %}
-<div class="card p-4 mb-3">
-    <div class="row mb-4">
-        {% for img in article.images %}
-        <div class="col-md-3 mb-3">
-            <a href="#" data-bs-toggle="modal" data-bs-target="#lightboxModal" data-img="{{ url_for('static', filename='uploads/' ~ img.filename) }}">
-                <img src="{{ url_for('static', filename='uploads/' ~ img.filename) }}" class="img-fluid rounded shadow-sm" style="max-height: 180px; object-fit: cover;">
-            </a>
+    <div class="col-12 col-lg-4">
+        <!-- Sidebar: Meta Info -->
+        <div class="glass-card p-4 sticky-top" style="top: 2rem;">
+            <div class="small text-muted fw-bold mb-4 text-uppercase opacity-50" style="letter-spacing:0.1em;">ИНФОРМАЦИЯ</div>
+            
+            <div class="d-flex flex-column gap-3">
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted small">Категория</span>
+                    <span class="badge bg-white text-dark border-0 shadow-sm">{{ article.category.name if article.category else 'Общее' }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted small">Обновлено</span>
+                    <span class="text-muted small fw-bold">{{ article.created_at.strftime('%d.%m.%Y') if article.created_at else '—' }}</span>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-top border-white border-opacity-10 text-center">
+                <p class="small text-muted">Статья помогла? <br> Скопируйте ссылку для коллеги</p>
+                <button class="btn btn-sm glass-card px-3 py-2 w-100" onclick="navigator.clipboard.writeText(window.location.href); this.textContent='✅ Ссылка скопирована!';">
+                    🔗 Копировать ссылку
+                </button>
+            </div>
         </div>
-        {% endfor %}
     </div>
-</div>
-{% endif %}
-
-<div class="card p-4 mb-3">
-    <div class="small text-muted fw-semibold mb-2 text-uppercase" style="letter-spacing:0.5px;">📋 Проблема</div>
-    <div style="white-space: pre-wrap; line-height:1.6;">{{ article.problem }}</div>
-</div>
-
-<div class="card p-4 mb-3">
-    <div class="small text-muted fw-semibold mb-2 text-uppercase" style="letter-spacing:0.5px;">✅ Решение</div>
-    <div style="white-space: pre-wrap; line-height:1.6;">{{ article.solution }}</div>
 </div>
 
 <!-- Lightbox Modal -->
 <div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content bg-transparent border-0">
-      <div class="modal-body p-0">
-        <img src="" id="lightboxImage" class="img-fluid">
-      </div>
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content glass-card shadow-lg border-0 overflow-hidden" style="background: rgba(0,0,0,0.8); backdrop-filter: blur(20px);">
+        <div class="modal-header border-0 pb-0">
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4 text-center">
+            <img src="" id="lightboxImage" class="img-fluid rounded-4 shadow-lg" style="max-height: 85vh;">
+        </div>
     </div>
   </div>
 </div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var lightboxModal = document.getElementById('lightboxModal');

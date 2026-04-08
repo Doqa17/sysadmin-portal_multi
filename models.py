@@ -142,3 +142,18 @@ class ADSettings(db.Model):
     )
     timezone_offset = db.Column(db.Integer, default=8) # Новое поле для часового пояса
     is_active = db.Column(db.Boolean, default=False)
+
+
+class AuditLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=get_now)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    user = db.relationship('User', backref='actions')
+    
+    action = db.Column(db.String(50), nullable=False)  # 'PASSWORD', 'POWER', 'SYNC', 'SETTINGS', 'ACCOUNT'
+    target = db.Column(db.String(100))  # Username or Computer name
+    description = db.Column(db.Text)
+    ip_address = db.Column(db.String(45))  # IPv6 compatible
+
+    def __repr__(self):
+        return f'<AuditLog {self.action} by {self.user_id} at {self.timestamp}>'

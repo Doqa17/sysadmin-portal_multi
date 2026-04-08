@@ -4,7 +4,7 @@ import random
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 
-from utils import admin_required
+from utils import admin_required, log_audit
 from models import db, User, ADSettings, Ticket, Todo
 from ad_service import (
     delete_ad_user, unlock_ad_account, toggle_ad_account, 
@@ -33,14 +33,76 @@ def ping():
     if not computer:
         return jsonify({'alive': False, 'error': 'Имя компьютера не указано'})
     try:
+        # 1. Сначала обычный пинг
         result = subprocess.run(
             ['ping', '-n', '1', '-w', '1500', computer],
-            capture_output=True, text=True, timeout=5
+            capture_output=True, timeout=5
         )
-        alive = result.returncode == 0
+        try:
+            out_text = result.stdout.decode('cp866').lower()
+        except:
+            out_text = result.stdout.decode('utf-8', errors='ignore').lower()
+
+        is_reply = ('ttl=' in out_text) or ('время=' in out_text) or ('time=' in out_text)
+        alive = (result.returncode == 0) and is_reply
+        
+        # 2. Если пинг прошел, проверяем порт 445 (SMB), чтобы отсечь DNS-заглушки/паркинг
+        if alive:
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(1.2)
+                is_pc = (s.connect_ex((computer, 445)) == 0)
+                s.close()
+                alive = is_pc 
+            except:
+                pass
+                
         return jsonify({'alive': alive, 'computer': computer})
     except Exception as e:
         return jsonify({'alive': False, 'error': str(e)})
+
+@api_bp.route('/tools/power', methods=['POST'])
+@admin_required
+def remote_power():
+    """Forced shutdown or reboot of a remote computer."""
+    computer = request.json.get('computer', '').strip()
+    action = request.json.get('action', 'reboot') # 'shutdown' or 'reboot'
+    
+    if not computer:
+        return jsonify({'success': False, 'message': 'Имя компьютера не указано'})
+    
+    # Validation: prevent shutdown of the server itself (basic check)
+    if computer.lower() in ['localhost', '127.0.0.1', socket.gethostname().lower()]:
+        return jsonify({'success': False, 'message': 'Невозможно выключить сервер портала!'})
+
+    flag = '/s' if action == 'shutdown' else '/r'
+    
+    try:
+        # /m: target machine, /f: force apps closed, /t 0: immediate
+        # we run it as current process user (must be domain admin)
+        cmd = ['shutdown', '/m', f'\\\\{computer}', flag, '/f', '/t', '0']
+        result = subprocess.run(cmd, capture_output=True, timeout=10)
+        
+        # Декодируем вывод из Windows-кодировки (по умолчанию CP866 в консоли РФ)
+        try:
+            err_text = result.stderr.decode('cp866').strip()
+        except:
+            err_text = result.stderr.decode('utf-8', errors='ignore').strip()
+
+        if result.returncode == 0:
+            msg = 'Команда на выключение отправлена' if action == 'shutdown' else 'Команда на перезагрузку отправлена'
+            log_audit('POWER', msg, target=computer)
+            return jsonify({'success': True, 'message': msg})
+        else:
+            # Shutdown often returns error if already shutting down or access denied
+            err_msg = err_text or 'Доступ запрещен или ПК офлайн'
+            if '(5)' in err_msg:
+                err_msg = f"Отказано в доступе (5): Пользователь, под которым запущен портал, не является администратором на ПК {computer}."
+            log_audit('POWER', f'Ошибка: {err_msg}', target=computer)
+            return jsonify({'success': False, 'message': f'Ошибка: {err_msg}'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Критическая ошибка: {str(e)}'})
 
 @api_bp.route('/tools/change-password', methods=['POST'])
 @admin_required
@@ -74,7 +136,16 @@ def change_password():
     if success:
         user.password_prefix = prefix
         db.session.commit()
-
+    
+    # "По-умному": если ручной ввод - пишем всё, если автозамена - скрываем префикс, но оставляем цифры
+    if manual_password:
+        log_desc = f"{message}. Новый пароль: {new_password}"
+    else:
+        # suffix здесь уже определен выше как случайные 3 цифры
+        log_desc = f"{message}. Новый пароль: ***{suffix}"
+    
+    log_audit('PASSWORD', log_desc, target=user.username)
+    
     return jsonify({'success': success, 'message': message, 'new_password': new_password if success else None})
 
 @api_bp.route('/tools/extend-password', methods=['POST'])
@@ -91,6 +162,7 @@ def extend_password():
 
     settings = ADSettings.query.first()
     success, message = extend_ad_password(user.username, settings)
+    log_audit('PASSWORD', message, target=user.username)
     return jsonify({'success': success, 'message': message})
 
 @api_bp.route('/tools/delete-ad-account', methods=['POST'])
@@ -118,13 +190,16 @@ def delete_ad_account():
             user.is_active = False
             user.is_from_ad = False # It's no longer an AD user as we deleted it there
             db.session.commit()
+            log_audit('ACCOUNT', 'Удален из AD, локально деактивирован', target=user.username)
             return jsonify({
                 'success': True, 
                 'message': 'Учетная запись удалена из Active Directory. На портале она переведена в статус "Заблокирован" для сохранения истории заявок.'
             })
         else:
+            username = user.username
             db.session.delete(user)
             db.session.commit()
+            log_audit('ACCOUNT', 'Полностью удален из AD и портала', target=username)
             return jsonify({
                 'success': True, 
                 'message': 'Учетная запись полностью удалена и из AD, и с портала.'
@@ -139,6 +214,7 @@ def unlock_account():
     user = User.query.get_or_404(user_id)
     settings = ADSettings.query.first()
     success, message = unlock_ad_account(user.username, settings)
+    log_audit('ACCOUNT', f'Разблокировка: {message}', target=user.username)
     return jsonify({'success': success, 'message': message})
 
 @api_bp.route('/tools/toggle-account', methods=['POST'])
@@ -152,11 +228,14 @@ def toggle_account():
         settings = ADSettings.query.first()
         success, message = toggle_ad_account(user.username, enable, settings)
         if not success:
+            log_audit('ACCOUNT', f'Ошибка переключения в AD: {message}', target=user.username)
             return jsonify({'success': False, 'message': message})
             
     user.is_active = enable
     db.session.commit()
-    return jsonify({'success': True, 'message': f"Пользователь {'включён' if enable else 'отключён'}"})
+    action_text = 'включён' if enable else 'отключён'
+    log_audit('ACCOUNT', f'Аккаунт {action_text}', target=user.username)
+    return jsonify({'success': True, 'message': f"Пользователь {action_text}"})
 
 @api_bp.route('/tools/toggle-password-expiration', methods=['POST'])
 @admin_required
@@ -213,9 +292,28 @@ def ping_pc():
         # Пингуем через систему: -n 1 (1 пакет), -w 1000 (таймаут 1 сек)
         result = subprocess.run(
             ['ping', '-n', '1', '-w', '1000', computer_name],
-            capture_output=True, text=True, timeout=3
+            capture_output=True, timeout=3
         )
-        online = (result.returncode == 0)
+        try:
+            out_text = result.stdout.decode('cp866').lower()
+        except:
+            out_text = result.stdout.decode('utf-8', errors='ignore').lower()
+
+        is_reply = ('ttl=' in out_text) or ('время=' in out_text) or ('time=' in out_text)
+        online = (result.returncode == 0) and is_reply
+        
+        # Если пинг ОК, проверяем 445 порт
+        if online:
+            try:
+                import socket
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(1.0)
+                is_pc = (s.connect_ex((computer_name, 445)) == 0)
+                s.close()
+                online = is_pc
+            except:
+                pass
+
         return jsonify({'online': online})
     except Exception as e:
         return jsonify({'online': False, 'error': str(e)})

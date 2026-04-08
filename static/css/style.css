@@ -909,28 +909,35 @@ h5, h6 { font-weight: 600; }
     border-radius: 12px;
     padding: 12px;
     font-weight: 600;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     background: #fff;
     box-shadow: 0 4px 6px rgba(0,0,0,0.03);
     border: 1px solid rgba(0,0,0,0.05);
+    color: var(--bs-secondary-color);
 }
 
 .btn-premium:hover {
-    transform: scale(1.03);
-    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px rgba(0,0,0,0.08);
+    background: #fff;
+    border-color: var(--hover-color, rgba(0,0,0,0.1));
+    color: var(--hover-color, var(--bs-heading-color)) !important;
 }
 
-.btn-premium.danger:hover { background: #fee2e2; color: #dc2626; }
-.btn-premium.info:hover { background: #e0f2fe; color: #0284c7; }
-.btn-premium.warning:hover { background: #fef3c7; color: #d97706; }
+.btn-premium:hover span[style*="opacity"] {
+    opacity: 1 !important;
+}
 
 [data-bs-theme="dark"] .btn-premium {
     background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.1);
-    color: #e2e8f0;
+    color: #94a3b8;
 }
+
 [data-bs-theme="dark"] .btn-premium:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--hover-color, rgba(255,255,255,0.2));
+    color: var(--hover-color, #fff) !important;
 }
 [data-bs-theme="dark"] .btn-premium.text-primary { color: #60a5fa !important; }
 [data-bs-theme="dark"] .btn-premium.text-danger { color: #fca5a5 !important; }

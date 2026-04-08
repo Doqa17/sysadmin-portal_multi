@@ -43,34 +43,45 @@
                             {% if current_user.is_admin %}Все заявки{% else %}Мои заявки{% endif %}
                         </a>
                     </li>
+                    {% if current_user.is_admin %}
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint and 'article' in request.endpoint %}active{% endif %}"
+                        <a class="nav-link {% if request.endpoint == 'admin.users' %}active{% endif %}"
+                            href="{{ url_for('admin.users') }}">
+                            Пользователи
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'articles.index' %}active{% endif %}"
                             href="{{ url_for('articles.index') }}">
                             База знаний
                         </a>
                     </li>
+                    {% endif %}
+
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint and 'todo' in request.endpoint %}active{% endif %}"
                             href="{{ url_for('todos.index') }}">
                             Мои задачи
                         </a>
                     </li>
+
                     {% if current_user.is_admin %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if request.endpoint and ('admin' in request.endpoint or request.endpoint in ['categories','statuses']) %}active{% endif %}"
+                        <a class="nav-link dropdown-toggle {% if request.endpoint and ('article' in request.endpoint or 'admin' in request.endpoint or request.endpoint in ['categories','statuses']) and request.endpoint != 'admin.users' %}active{% endif %}"
                             href="#" data-bs-toggle="dropdown">
                             Управление
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('admin.users') }}">👥 Пользователи</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.categories') }}">📂 Категории</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.statuses') }}">🏷 Статусы</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('articles.index') }}">📚 База знаний</a></li>
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.ad_settings') }}">🔗 Active Directory</a>
-                            </li>
-                            <li><a class="dropdown-item" href="{{ url_for('articles.new') }}">📝 Новая статья</a></li>
+                            <li class="dropdown-header text-uppercase x-small fw-bold">Система</li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.categories') }}">📂 Категории</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.statuses') }}">🏷 Статусы</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.ad_settings') }}">🔗 Active Directory</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.audit_logs') }}">📜 Логи действий</a></li>
                         </ul>
                     </li>
                     {% endif %}
@@ -81,7 +92,8 @@
                         + Новая заявка
                     </a>
                     <div class="dropdown">
-                        <button class="btn btn-user dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+                        <button class="btn btn-user dropdown-toggle d-flex align-items-center gap-2" type="button"
+                            data-bs-toggle="dropdown">
                             {{ render_avatar(current_user.display_name, 'sm') }}
                             <span class="user-name d-none d-md-inline">{{ current_user.display_name }}</span>
                             {{ render_role_badge(current_user.role, short=True) }}
@@ -98,7 +110,8 @@
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
-                            <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">← Выход</a></li>
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">← Выход</a>
+                            </li>
                         </ul>
                     </div>
                     <button class="btn btn-theme" id="themeToggle" title="Переключить тему">☀️</button>
@@ -168,13 +181,13 @@
         });
 
         // Initialize Tom Select for searchable dropdowns
-        document.querySelectorAll('.ts-select').forEach(function(el) {
+        document.querySelectorAll('.ts-select').forEach(function (el) {
             new TomSelect(el, {
                 allowEmptyOption: true,
                 maxOptions: 1000,
                 placeholder: el.getAttribute('placeholder') || 'Поиск...',
                 render: {
-                    no_results: function(data, escape) {
+                    no_results: function (data, escape) {
                         return '<div class="no-results">Пользователь не найден</div>';
                     }
                 }

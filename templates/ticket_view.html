@@ -1,176 +1,239 @@
 {% extends "base.html" %}
 {% block title %}Заявка #{{ ticket.id }} — IT Helpdesk{% endblock %}
 {% block content %}
-{% from 'macros.html' import render_back_button %}
-<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+{% from 'macros.html' import render_back_button, render_avatar %}
+
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
     <div>
-        <h2 class="mb-0">Заявка #{{ ticket.id }}</h2>
-        <div class="text-muted small mt-1">Создана {{ ticket.created_at.strftime("%d.%m.%Y в %H:%M") }}</div>
+        <div class="d-flex align-items-center gap-3 mb-1">
+            <h2 class="mb-0 fw-bold">Заявка #{{ ticket.id }}</h2>
+            <span class="badge status-badge-{{ ticket.status_obj.color }} px-3 py-2 rounded-pill shadow-sm">
+                {{ ticket.status_obj.name }}
+            </span>
+        </div>
+        <div class="text-muted small">📅 Создана {{ ticket.created_at.strftime("%d.%m.%Y в %H:%M") }}</div>
     </div>
     <div class="d-flex gap-2">
         {% if current_user.is_admin %}
-        <a href="{{ url_for('tickets.edit', ticket_id=ticket.id) }}" class="btn btn-sm btn-edit">✏️ Редактировать</a>
-        <a href="{{ url_for('tickets.delete', ticket_id=ticket.id) }}" class="btn btn-sm btn-delete"
+        <div class="dropdown">
+            <button class="btn glass-card px-3 py-2 dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+                ⚙️ Статус
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 p-2 glass-card">
+                {% for status in statuses %}
+                <li><a class="dropdown-item rounded-3 d-flex align-items-center justify-content-between mb-1" 
+                        href="{{ url_for('tickets.set_status', ticket_id=ticket.id, status_id=status.id) }}">
+                        <span>{{ status.name }}</span>
+                        <span class="status-dot bg-{{ status.color }}" style="width:8px; height:8px;"></span>
+                    </a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        <a href="{{ url_for('tickets.edit', ticket_id=ticket.id) }}" class="btn glass-card px-3 py-2 text-primary">✏️ Править</a>
+        <a href="{{ url_for('tickets.delete', ticket_id=ticket.id) }}" class="btn glass-card px-3 py-2 text-danger"
             onclick="return confirm('Удалить заявку?');">🗑 Удалить</a>
         {% endif %}
         {{ render_back_button(url_for('tickets.index'), 'Назад') }}
     </div>
 </div>
 
-<!-- Статус и управление -->
-<div class="card p-4 mb-3 card-status-header">
-    <div class="row g-3">
-        <div class="col-6 col-md-3">
-            <div class="small text-muted mb-1">Статус</div>
-            {% if current_user.is_admin %}
-            <div class="dropdown">
-                <button class="btn btn-sm status-badge-{{ ticket.status_obj.color }} border-0 dropdown-toggle"
-                    type="button" data-bs-toggle="dropdown">
-                    {{ ticket.status_obj.name }}
-                </button>
-                <ul class="dropdown-menu shadow border-0 rounded-4">
-                    {% for status in statuses %}
-                    <li><a class="dropdown-item rounded-3 mx-1" style="width:auto;"
-                            href="{{ url_for('tickets.set_status', ticket_id=ticket.id, status_id=status.id) }}">
-                            <span class="badge status-badge-{{ status.color }} me-1">{{ status.name }}</span>
-                        </a></li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% else %}
-            <span class="badge status-badge-{{ ticket.status_obj.color }} px-3 py-2">{{ ticket.status_obj.name }}</span>
-            {% endif %}
+<div class="row g-4">
+    <!-- Main Info & Description -->
+    <div class="col-12 col-lg-8">
+        <div class="glass-card p-4 mb-4">
+            <div class="small text-muted fw-bold mb-3 text-uppercase opacity-50" style="letter-spacing:0.1em;">📋 Описание проблемы</div>
+            <div class="fs-5" style="white-space: pre-wrap; line-height:1.6; color: var(--bs-heading-color);">{{ ticket.description }}</div>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="small text-muted mb-1">Категория</div>
-            <div class="fw-semibold">{{ ticket.category.name if ticket.category else '—' }}</div>
+
+        {% if ticket.resolution %}
+        <div class="glass-card p-4 border-success-subtle border border-opacity-25" style="background: rgba(16, 185, 129, 0.03);">
+            <div class="small text-success fw-bold mb-3 text-uppercase opacity-75" style="letter-spacing:0.1em;">✅ Решение</div>
+            <div class="fs-6" style="white-space: pre-wrap; line-height:1.6;">{{ ticket.resolution }}</div>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="small text-muted mb-1">Заявитель</div>
-            <div class="fw-semibold">{{ ticket.author.display_name }}</div>
-            {% if ticket.author.department %}
-            <div class="small text-muted">{{ ticket.author.department }}</div>
-            {% endif %}
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="small text-muted mb-1">Исполнитель</div>
-            <div class="fw-semibold">{{ ticket.assignee.display_name if ticket.assignee else '— не назначено —' }}</div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="small text-muted mb-1">Телефон</div>
-            <div class="fw-semibold">{{ ticket.contact_phone or '—' }}</div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="small text-muted mb-1">Компьютер</div>
-            <div class="fw-semibold">{{ ticket.contact_computer or '—' }}</div>
-        </div>
-        {% if ticket.article %}
-        <div class="col-12 col-md-6">
-            <div class="small text-muted mb-1">Связанная статья</div>
-            <div class="fw-semibold">
-                <a href="{{ url_for('articles.view', article_id=ticket.article.id) }}">{{ ticket.article.title }}</a>
+        {% elif current_user.is_admin %}
+        <div class="glass-card p-4 border-dashed text-center">
+            <div class="text-muted py-2">
+                Решение ещё не добавлено. <br>
+                <a href="{{ url_for('tickets.edit', ticket_id=ticket.id) }}" class="fw-bold text-primary text-decoration-none">Обновить заявку и добавить решение →</a>
             </div>
         </div>
         {% endif %}
     </div>
-</div>
 
-<!-- Описание -->
-<div class="card p-4 mb-3">
-    <div class="small text-muted fw-semibold mb-2 text-uppercase" style="letter-spacing:0.5px;">📋 Описание проблемы
-    </div>
-    <div style="white-space: pre-wrap; line-height:1.6;">{{ ticket.description }}</div>
-</div>
+    <!-- Sidebar: User & Device Info -->
+    <div class="col-12 col-lg-4">
+        <!-- Requester -->
+        <div class="glass-card p-4 mb-4">
+            <div class="small text-muted fw-bold mb-3 text-uppercase opacity-50">👤 Заявитель</div>
+            <div class="d-flex align-items-center gap-3">
+                {{ render_avatar(ticket.author.display_name, 'lg') }}
+                <div class="min-width-0">
+                    <div class="fw-bold text-truncate">{{ ticket.author.display_name }}</div>
+                    <div class="small text-muted text-truncate">{{ ticket.author.department or 'Без отдела' }}</div>
+                    {% if ticket.contact_phone %}
+                    <div class="mt-2 small"><a href="tel:{{ ticket.contact_phone }}" class="text-decoration-none text-primary">📞 {{ ticket.contact_phone }}</a></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
 
-<!-- Решение -->
-{% if ticket.resolution %}
-<div class="card p-4 mb-3 border-success-subtle">
-    <div class="small text-muted fw-semibold mb-2 text-uppercase" style="letter-spacing:0.5px;">✅ Решение</div>
-    <div style="white-space: pre-wrap; line-height:1.6;">{{ ticket.resolution }}</div>
-</div>
-{% elif current_user.is_admin %}
-<div class="card p-4 mb-3 border-dashed">
-    <div class="text-muted text-center py-2">
-        Решение ещё не добавлено.
-        <a href="{{ url_for('tickets.edit', ticket_id=ticket.id) }}">Добавить решение →</a>
+        <!-- Assignee -->
+        <div class="glass-card p-4 mb-4">
+            <div class="small text-muted fw-bold mb-3 text-uppercase opacity-50">🛠️ Исполнитель</div>
+            {% if ticket.assignee %}
+            <div class="d-flex align-items-center gap-3">
+                {{ render_avatar(ticket.assignee.display_name, 'md') }}
+                <div>
+                    <div class="fw-bold">{{ ticket.assignee.display_name }}</div>
+                    <div class="small text-muted">IT-отдел</div>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-muted small italic text-center py-2">Специалист не назначен</div>
+            {% endif %}
+        </div>
+
+        <!-- Technical Details -->
+        <div class="glass-card p-4">
+            <div class="small text-muted fw-bold mb-3 text-uppercase opacity-50">🖥️ Устройство и Категория</div>
+            <div class="d-flex flex-column gap-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">Категория</span>
+                    <span class="badge bg-white text-dark border-0 shadow-sm">{{ ticket.category.name if ticket.category else 'Другое' }}</span>
+                </div>
+                {% if ticket.contact_computer %}
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">Компьютер</span>
+                    <div class="d-flex align-items-center gap-2 overflow-hidden" style="max-width: 70%;">
+                         <code class="fw-bold p-1 px-2 bg-white bg-opacity-10 rounded-2 border border-white border-opacity-10 cursor-pointer" 
+                               style="font-size: 0.85em; color: var(--bs-heading-color);"
+                               onclick="copySimple('{{ ticket.contact_computer }}', this)">
+                             {{ ticket.contact_computer }}
+                         </code>
+                         {% if current_user.is_admin %}
+                         <span class="status-dot-ping shadow-sm" id="pingDot" style="width:7px; height:7px; border-radius:50%; background:#94a3b8; flex-shrink:0;"></span>
+                         {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% if ticket.article %}
+                <div class="pt-2 border-top-subtle mt-1">
+                    <div class="small text-muted mb-1">Связанная справка</div>
+                    <a href="{{ url_for('articles.view', article_id=ticket.article.id) }}" class="small fw-bold text-decoration-none">📖 {{ ticket.article.title }}</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
-{% endif %}
 
 {% if current_user.is_admin and ticket.contact_computer %}
 <!-- ===== IT ИНСТРУМЕНТЫ ===== -->
-<div class="card p-4 mb-3" id="it-tools-card">
-    <div class="small text-muted fw-semibold mb-3 text-uppercase" style="letter-spacing:0.5px;">🛠️ Инструменты администратора</div>
-    <div class="d-flex flex-wrap gap-2 align-items-center">
-
-        <!-- Ping -->
-        <button class="btn btn-sm btn-outline-secondary" onclick="pingComputer('{{ ticket.contact_computer }}')" id="btn-ping">
-            📡 Ping <span id="ping-indicator" class="ms-1"></span>
+<div class="glass-card p-4 mt-4" id="it-tools-card">
+    <div class="small text-muted fw-bold mb-4 text-uppercase opacity-50" style="letter-spacing:0.1em;">🛠️ Инструменты администратора</div>
+    
+    <div class="tool-button-group">
+        <!-- Пинг -->
+        <button class="btn-premium d-flex align-items-center justify-content-center gap-2" 
+                onclick="pingComputer('{{ ticket.contact_computer }}')" id="btn-ping"
+                style="--hover-color: #10b981;">
+            <span>📡</span> <span class="small fw-bold">Пинг <small id="ping-indicator"></small></span>
         </button>
 
         <!-- Скопировать имя ПК -->
-        <button class="btn btn-sm btn-outline-secondary"
-            onclick="copyToClipboard('{{ ticket.contact_computer }}', this)">
-            📋 Имя ПК
+        <button class="btn-premium d-flex align-items-center justify-content-center gap-2"
+            onclick="copyToClipboard('{{ ticket.contact_computer }}', this)"
+            style="--hover-color: var(--bs-primary);">
+            <span>📋</span> <span class="small fw-bold">Имя ПК</span>
         </button>
 
         <!-- Скопировать UNC путь -->
-        <button class="btn btn-sm btn-outline-secondary"
-            onclick="copyToClipboard('\\\\{{ ticket.contact_computer }}\\c$', this)">
-            💾 \\{{ ticket.contact_computer }}\c$
+        <button class="btn-premium d-flex align-items-center justify-content-center gap-2 overflow-hidden"
+            onclick="copyToClipboard('\\\\{{ ticket.contact_computer }}\\c$', this)"
+            style="--hover-color: var(--bs-primary);">
+            <span style="flex-shrink:0;">💾</span> <span class="small fw-bold text-truncate">C$ Share</span>
         </button>
 
-        {% if ticket.author and not ticket.author.password_never_expires %}
+        <!-- Перезагрузка -->
+        <button class="btn-premium d-flex align-items-center justify-content-center gap-2" 
+                onclick="powerAction('{{ ticket.contact_computer }}', 'reboot')"
+                style="--hover-color: #3b82f6;">
+            <span style="opacity: 0.7;">🔄</span> <span class="small fw-bold">Перезагрузка</span>
+        </button>
+
+        <!-- Выключение -->
+        <button class="btn-premium d-flex align-items-center justify-content-center gap-2" 
+                onclick="powerAction('{{ ticket.contact_computer }}', 'shutdown')"
+                style="--hover-color: #ef4444;">
+            <span style="opacity: 0.7;">🔌</span> <span class="small fw-bold">Выключение</span>
+        </button>
+
+        {% if ticket.author and not (ad_info and ad_info.pwd_never_expires) %}
         <!-- Сменить пароль -->
-        <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
-            🔑 Сменить пароль
+        <button class="btn-premium d-flex align-items-center justify-content-center gap-2" 
+                data-bs-toggle="modal" data-bs-target="#changePasswordModal" 
+                style="--hover-color: var(--accent-orange);">
+            <span>🔑</span> <span class="small fw-bold">Сменить пароль</span>
         </button>
 
         <!-- Продлить пароль -->
-        <button class="btn btn-sm btn-outline-info" onclick="extendPassword({{ ticket.author.id }})">
-            📅 Продлить пароль
+        <button class="btn-premium d-flex align-items-center justify-content-center gap-2" 
+                onclick="extendPassword({{ ticket.author.id }})"
+                style="--hover-color: var(--bs-primary);">
+            <span>⏳</span> <span class="small fw-bold">Продлить срок</span>
         </button>
-        {% elif ticket.author and ticket.author.password_never_expires %}
-        <span class="text-muted small fst-italic ms-2">🔒 Постоянный пароль — управление паролем недоступно</span>
         {% endif %}
     </div>
 </div>
+{% endif %}
+
+    {% if ticket.author and (ad_info and ad_info.pwd_never_expires) %}
+    <div class="mt-3 text-center">
+        <span class="badge bg-white text-muted border-0 shadow-sm py-2 px-3 opacity-75">
+            🔒 Управление паролем недоступно (Постоянный пароль)
+        </span>
+    </div>
+    {% endif %}
 
 <!-- Modal: Смена пароля -->
-{% if ticket.author and not ticket.author.password_never_expires %}
+{% if ticket.author and not (ad_info and ad_info.pwd_never_expires) %}
 <div class="modal fade" id="changePasswordModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius:18px; border:none; overflow:hidden;">
+        <div class="modal-content glass-card shadow-lg border-0 overflow-hidden" style="backdrop-filter: blur(40px);">
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-semibold">🔑 Смена пароля AD</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title fw-bold">🔑 Смена пароля AD</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(0.5);"></button>
             </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <div class="text-muted small mb-2">Пользователь: <strong>{{ ticket.author.display_name }}</strong> (@{{ ticket.author.username }})</div>
+            <div class="modal-body p-4">
+                <div class="p-3 mb-4 rounded-4 bg-white bg-opacity-5 border border-white border-opacity-10">
+                    <div class="small text-muted mb-1">Пользователь:</div>
+                    <div class="fw-bold">{{ ticket.author.display_name }}</div>
+                    <div class="x-small opacity-50">@{{ ticket.author.username }}</div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Префикс пароля</label>
-                    <input type="text" class="form-control" id="pwdPrefix"
+
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Префикс пароля</label>
+                    <input type="text" class="form-control border-0 glass-card px-3 py-2" id="pwdPrefix"
                         value="{{ ticket.author.password_prefix or '' }}"
-                        placeholder="Введите неизменяемую часть пароля...">
-                    <div class="form-text">Последние 3 цифры будут сгенерированы автоматически</div>
+                        placeholder="Напр. IT2024">
+                    <div class="form-text x-small mt-2">Пароль дополнится 3 случайными цифрами</div>
                 </div>
-                <div class="alert alert-info py-2 small" id="pwdPreview" style="display:none;">
-                    <strong>Новый пароль будет:</strong> <span id="pwdPreviewText" class="font-monospace fw-bold"></span>
+
+                <div class="alert alert-info py-3 border-0 rounded-4 glass-card shadow-none" id="pwdPreview" style="display:none; background: rgba(59, 130, 246, 0.1);">
+                    <div class="small opacity-75 mb-1">Предпросмотр:</div>
+                    <div id="pwdPreviewText" class="font-monospace fw-bold fs-5 text-primary"></div>
                 </div>
                 <div id="pwdResult" style="display:none;"></div>
             </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-warning fw-semibold" onclick="changePassword({{ ticket.author.id }})">
-                    Сменить пароль в AD
+            <div class="modal-footer border-0 pt-0 pb-4 justify-content-center">
+                <button type="button" class="btn btn-link text-muted text-decoration-none px-4" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary px-4 py-2 rounded-pill shadow fw-bold" onclick="changePassword({{ ticket.author.id }})">
+                    Сгенерировать и сменить
                 </button>
             </div>
         </div>
     </div>
 </div>
-{% endif %}
 {% endif %}
 
 {% endblock %}
@@ -190,6 +253,40 @@ function copyToClipboard(text, btn) {
         }, 2000);
     });
 }
+
+function copySimple(text, el) {
+    navigator.clipboard.writeText(text).then(function() {
+        const origColor = el.style.color;
+        el.style.color = '#10b981'; // Green
+        const origText = el.innerText;
+        el.innerText = 'Скопировано!';
+        setTimeout(() => {
+            el.style.color = origColor;
+            el.innerText = text;
+        }, 1500);
+    });
+}
+
+function powerAction(computer, action) {
+    const actionName = action === 'shutdown' ? 'ВЫКЛЮЧИТЬ' : 'ПЕРЕЗАГРУЗИТЬ';
+    if (!confirm(`⚠️ ВНИМАНИЕ: Вы принудительно хотите ${actionName} компьютер ${computer}?\n\nВсе несохраненные данные пользователя будут потеряны.`)) return;
+
+    fetch('/api/tools/power', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
+        body: JSON.stringify({computer: computer, action: action})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+        } else {
+            alert('❌ ' + data.message);
+        }
+    })
+    .catch(err => alert('Ошибка при отправке команды'));
+}
+
 
 function pingComputer(computer) {
     const btn = document.getElementById('btn-ping');
