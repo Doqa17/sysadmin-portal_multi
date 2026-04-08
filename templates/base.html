@@ -1,3 +1,4 @@
+{% from 'macros.html' import render_avatar, render_role_badge %}
 <!DOCTYPE html>
 <html lang="ru" data-bs-theme="dark">
 
@@ -80,14 +81,10 @@
                         + Новая заявка
                     </a>
                     <div class="dropdown">
-                        <button class="btn btn-user dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            <span class="user-avatar">{{ current_user.display_name[0]|upper }}</span>
+                        <button class="btn btn-user dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+                            {{ render_avatar(current_user.display_name, 'sm') }}
                             <span class="user-name d-none d-md-inline">{{ current_user.display_name }}</span>
-                            {% if current_user.is_superadmin %}
-                            <span class="badge badge-super ms-1">Super</span>
-                            {% elif current_user.is_admin %}
-                            <span class="badge badge-admin ms-1">IT</span>
-                            {% endif %}
+                            {{ render_role_badge(current_user.role, short=True) }}
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li class="dropdown-header">

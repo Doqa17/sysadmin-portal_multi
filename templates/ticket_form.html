@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Редактирование' if edit else 'Новая заявка' }} — IT Helpdesk{% endblock %}
 {% block content %}
-
+{% from 'macros.html' import render_back_button %}
 <div class="d-flex align-items-center justify-content-between mb-4">
     <h2 class="mb-0">{{ 'Редактирование заявки' if edit else 'Новая заявка' }}</h2>
-    <a href="{{ url_for('tickets.index') }}" class="btn btn-sm btn-back">← Назад</a>
+    {{ render_back_button(url_for('tickets.index'), 'Назад') }}
 </div>
 
 <div class="card p-4">

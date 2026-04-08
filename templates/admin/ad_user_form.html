@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Новый пользователь AD — IT Helpdesk{% endblock %}
 {% block content %}
+{% from 'macros.html' import render_back_button %}
 <div class="d-flex align-items-center justify-content-between mb-4">
     <h2 class="mb-0">Создать сотрудника в AD</h2>
-    <a href="{{ url_for('admin.users') }}" class="btn btn-sm btn-back px-3">← К списку</a>
+    {{ render_back_button(url_for('admin.users'), 'К списку') }}
 </div>
 
 <div class="row g-4">

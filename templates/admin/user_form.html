@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Редактирование' if edit else 'Новый пользователь' }} — IT Helpdesk{% endblock %}
 {% block content %}
+{% from 'macros.html' import render_back_button %}
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div class="d-flex align-items-center gap-3">
         <h2 class="mb-0">{{ 'Редактирование' if edit else 'Создание' }} пользователя</h2>
@@ -18,7 +19,7 @@
             {% endif %}
         {% endif %}
     </div>
-    <a href="{{ url_for('admin.users') }}" class="btn btn-sm btn-back px-3 border-0">← К списку</a>
+    {{ render_back_button(url_for('admin.users'), 'К списку') }}
 </div>
 
 <div class="row g-4">

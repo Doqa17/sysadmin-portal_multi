@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Заявка #{{ ticket.id }} — IT Helpdesk{% endblock %}
 {% block content %}
-
+{% from 'macros.html' import render_back_button %}
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
         <h2 class="mb-0">Заявка #{{ ticket.id }}</h2>
@@ -13,7 +13,7 @@
         <a href="{{ url_for('tickets.delete', ticket_id=ticket.id) }}" class="btn btn-sm btn-delete"
             onclick="return confirm('Удалить заявку?');">🗑 Удалить</a>
         {% endif %}
-        <a href="{{ url_for('tickets.index') }}" class="btn btn-sm btn-back">← Назад</a>
+        {{ render_back_button(url_for('tickets.index'), 'Назад') }}
     </div>
 </div>
 

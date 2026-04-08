@@ -304,17 +304,7 @@ a:not(.btn):not(.navbar-brand):not(.dropdown-item):not(.nav-link):not(.quick-act
     color: #fff;
 }
 
-.user-avatar {
-    width: 24px; height: 24px;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 700;
-    color: #fff;
-}
+
 
 .btn-theme {
     background: transparent;
@@ -428,18 +418,7 @@ a:not(.btn):not(.navbar-brand):not(.dropdown-item):not(.nav-link):not(.quick-act
     background: rgba(255,255,255,0.03) !important;
 }
 
-.user-avatar-lg {
-    width: 80px; height: 80px;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-    border-radius: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    font-weight: 700;
-    color: #fff;
-    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2);
-}
+
 
 
 .border-bottom-subtle { border-bottom: 1px solid rgba(0,0,0,0.06) !important; }
@@ -766,18 +745,7 @@ a:not(.btn):not(.navbar-brand):not(.dropdown-item):not(.nav-link):not(.quick-act
     color: #fff;
 }
 
-.user-avatar-sm {
-    width: 36px; height: 36px;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: 700;
-    color: #fff;
-    flex-shrink: 0;
-}
+
 
 /* ===== TODO CHECKBOX ===== */
 .todo-checkbox {
@@ -879,7 +847,7 @@ h5, h6 { font-weight: 600; }
     --accent-orange: #f59e0b;
 }
 
-[data-bs-theme="dark"] :root {
+:root[data-bs-theme="dark"] {
     --glass-bg: rgba(30, 41, 59, 0.7);
     --glass-border: rgba(255, 255, 255, 0.1);
 }
@@ -926,6 +894,10 @@ h5, h6 { font-weight: 600; }
     box-shadow: 0 10px 20px rgba(0,0,0,0.04);
 }
 
+[data-bs-theme="dark"] .stat-item:hover {
+    background: rgba(255,255,255,0.05);
+}
+
 .tool-button-group {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -951,6 +923,19 @@ h5, h6 { font-weight: 600; }
 .btn-premium.danger:hover { background: #fee2e2; color: #dc2626; }
 .btn-premium.info:hover { background: #e0f2fe; color: #0284c7; }
 .btn-premium.warning:hover { background: #fef3c7; color: #d97706; }
+
+[data-bs-theme="dark"] .btn-premium {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+}
+[data-bs-theme="dark"] .btn-premium:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+[data-bs-theme="dark"] .btn-premium.text-primary { color: #60a5fa !important; }
+[data-bs-theme="dark"] .btn-premium.text-danger { color: #fca5a5 !important; }
+[data-bs-theme="dark"] .btn-premium.text-muted { color: #94a3b8 !important; }
+[data-bs-theme="dark"] .btn-premium.text-success { color: #86efac !important; }
 
 /* ===== TICKET FEED (In User Dashboard) ===== */
 .ticket-feed-card {

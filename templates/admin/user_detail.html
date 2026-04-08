@@ -1,16 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Профиль: {{ user.display_name }} — IT Dashboard{% endblock %}
 {% block content %}
+{% from 'macros.html' import render_avatar, render_role_badge, render_status_badge, render_back_button %}
 
 <!-- Header & Back Button -->
 <div class="d-flex align-items-center justify-content-between mb-4">
-    <a href="{{ url_for('admin.users') }}" class="btn btn-back glass-card px-3 py-2 d-inline-flex align-items-center gap-2 text-muted">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
-        </svg>
-        <span>Вернуться к списку</span>
-    </a>
-    
+    {{ render_back_button(url_for('admin.users'), 'Вернуться к списку') }}
+
     <div class="d-flex gap-2">
         <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="btn btn-premium info px-4">
             ✏️ Редактировать профиль
@@ -21,22 +17,17 @@
 <!-- Main Profile Header -->
 <div class="user-profile-header glass-card mb-4 d-flex flex-wrap align-items-center gap-4">
     <div class="position-relative">
-        <div class="user-avatar-lg shadow-lg" style="width: 100px; height: 100px; font-size: 36px;">
-            {{ (user.display_name[0])|upper }}
-        </div>
+        {{ render_avatar(user.display_name, 'lg') }}
         <div class="position-absolute bottom-0 end-0 p-1 bg-white rounded-circle">
-            <span class="status-dot {% if user.is_active %}text-success{% else %}text-danger{% endif %}" style="width:16px; height:16px; margin:0;"></span>
+            <span class="status-dot {% if user.is_active %}text-success{% else %}text-danger{% endif %}"
+                style="width:16px; height:16px; margin:0;"></span>
         </div>
     </div>
-    
+
     <div class="flex-grow-1">
         <div class="d-flex align-items-center gap-3 mb-1">
             <h2 class="m-0 fw-bold">{{ user.display_name }}</h2>
-            <span class="badge {% if user.role == "superadmin" %}badge-super{% elif user.role == "admin" %}badge-admin{% else %}badge-employee{% endif %}">
-                {% if user.role == "superadmin" %}S-ADMIN
-                {% elif user.role == "admin" %}Администратор
-                {% else %}Сотрудник{% endif %}
-            </span>
+            {{ render_role_badge(user.role) }}
         </div>
         <div class="text-muted d-flex align-items-center gap-4 flex-wrap">
             <span><i class="opacity-50">@</i>{{ user.username }}</span>
@@ -55,31 +46,35 @@
             <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
                 <span class="text-primary">👤</span> Основная информация
             </h5>
-            
+
             <div class="d-flex flex-column gap-4">
                 <div class="stat-item">
                     <div class="small text-muted mb-1">Email Адрес</div>
                     <div class="fw-bold text-truncate">{{ user.email or '—' }}</div>
                 </div>
-                
+
                 <div class="stat-item">
                     <div class="small text-muted mb-1">Телефон</div>
                     <div class="fw-bold">{{ user.phone or '—' }}</div>
                 </div>
-                
+
                 <div class="stat-item position-relative">
                     <div class="small text-muted mb-1 d-flex justify-content-between align-items-center">
                         <span>Рабочий компьютер</span>
                         {% if user.computer_name %}
-                        <button class="btn btn-sm btn-link p-0 text-muted text-decoration-none" onclick="navigator.clipboard.writeText('{{ user.computer_name }}'); this.innerText='✅'; setTimeout(()=>this.innerText='📋', 1500)" title="Копировать">📋</button>
+                        <button class="btn btn-sm btn-link p-0 text-muted text-decoration-none"
+                            onclick="navigator.clipboard.writeText('{{ user.computer_name }}'); this.innerText='✅'; setTimeout(()=>this.innerText='📋', 1500)"
+                            title="Копировать">📋</button>
                         {% endif %}
                     </div>
                     <div class="fw-bold d-flex align-items-center gap-2 overflow-hidden">
-                        <span class="text-truncate d-block" style="max-width: 100%; flex-shrink: 1;" title="{{ user.computer_name or '—' }}">
+                        <span class="text-truncate d-block" style="max-width: 100%; flex-shrink: 1;"
+                            title="{{ user.computer_name or '—' }}">
                             {{ user.computer_name or '—' }}
                         </span>
                         {% if user.computer_name %}
-                        <span id="pcStatus" class="badge bg-light text-dark shadow-sm border ms-auto" style="font-size: 0.65em; flex-shrink: 0;">Проверка...</span>
+                        <span id="pcStatus" class="badge bg-light text-dark shadow-sm border ms-auto"
+                            style="font-size: 0.65em; flex-shrink: 0;">Проверка...</span>
                         {% endif %}
                     </div>
                 </div>
@@ -87,18 +82,19 @@
                 <div class="stat-item">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="small text-muted">Группы доступа</div>
-                        <button class="btn btn-link btn-sm p-0 text-decoration-none x-small" data-bs-toggle="modal" data-bs-target="#groupsModal">⚙️ Управление</button>
+                        <button class="btn btn-link btn-sm p-0 text-decoration-none x-small" data-bs-toggle="modal"
+                            data-bs-target="#groupsModal">⚙️ Управление</button>
                     </div>
                     <div class="d-flex flex-wrap gap-1">
                         {% if ad_info and ad_info.groups %}
-                            {% for group in ad_info.groups[:4] %}
-                            <span class="badge bg-white text-dark border-0 shadow-sm x-small py-1 px-2">{{ group }}</span>
-                            {% endfor %}
-                            {% if ad_info.groups|length > 4 %}
-                            <span class="text-muted x-small ms-1 mt-1">+{{ ad_info.groups|length - 4 }} еще...</span>
-                            {% endif %}
+                        {% for group in ad_info.groups[:4] %}
+                        <span class="badge bg-white text-dark border-0 shadow-sm x-small py-1 px-2">{{ group }}</span>
+                        {% endfor %}
+                        {% if ad_info.groups|length > 4 %}
+                        <span class="text-muted x-small ms-1 mt-1">+{{ ad_info.groups|length - 4 }} еще...</span>
+                        {% endif %}
                         {% else %}
-                            <span class="text-muted x-small italic text-center w-100">Нет данных о группах</span>
+                        <span class="text-muted x-small italic text-center w-100">Нет данных о группах</span>
                         {% endif %}
                     </div>
                 </div>
@@ -108,86 +104,107 @@
 
     <!-- Правая колонка: Инструменты и Фид -->
     <div class="col-12 col-lg-8">
-        
+
         <!-- Панель Инструментов AD (Вид Плиток) -->
         {% if user.is_from_ad %}
         <div class="glass-card p-4 mb-4">
             <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
                 <span class="text-warning">🛠️</span> Инструменты Active Directory
             </h5>
-            
+
             <div class="row g-3">
                 <div class="col-12 col-md-4">
-                    <div class="p-3 border rounded-4 text-center cursor-pointer h-100 transition-all hover-shadow" 
-                         style="background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(0, 0, 0, 0.05);"
-                         onclick="togglePasswordExpiration({{ user.id }}, {{ 'false' if (ad_info and ad_info.pwd_never_expires) else 'true' }})">
-                        <span class="fs-4 d-block mb-1">{% if ad_info and ad_info.pwd_never_expires %}🔒{% else %}🔓{% endif %}</span>
-                        <div class="fw-bold small text-muted">{% if ad_info and ad_info.pwd_never_expires %}Постоянный пароль{% else %}Обычный срок{% endif %}</div>
+                    <div class="p-3 border-0 rounded-4 text-center cursor-pointer h-100 transition-all hover-shadow glass-card"
+                        onclick="togglePasswordExpiration({{ user.id }}, {{ 'false' if (ad_info and ad_info.pwd_never_expires) else 'true' }})">
+                        <span class="fs-4 d-block mb-1">{% if ad_info and ad_info.pwd_never_expires %}🔒{% else %}🔓{%
+                            endif %}</span>
+                        <div class="fw-bold small text-muted">{% if ad_info and ad_info.pwd_never_expires %}Постоянный
+                            пароль{% else %}Обычный срок{% endif %}</div>
                         <div class="x-small opacity-60">Кликни, чтобы изменить</div>
                     </div>
                 </div>
 
                 {% if not (ad_info and ad_info.pwd_never_expires) %}
                 <div class="col-12 col-md-8">
-                    <div class="stat-item h-100 d-flex flex-column justify-content-center p-3 rounded-4 glass-card border-0 shadow-none">
+                    <div
+                        class="p-3 rounded-4 glass-card h-100 d-flex flex-column justify-content-center"
+                        style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05) !important;">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <div class="small text-muted">Управление паролем</div>
                             <div class="form-check form-switch small">
-                                <input class="form-check-input" type="checkbox" id="manualMode" onclick="togglePwdMode()">
+                                <input class="form-check-input" type="checkbox" id="manualMode"
+                                    onclick="togglePwdMode()">
                                 <label class="form-check-label x-small text-muted" for="manualMode">Свой пароль</label>
                             </div>
                         </div>
-                        
-                        <div class="input-group" id="autoGroup">
-                            <input type="text" id="pwdPrefix" class="form-control border-0 bg-transparent" 
-                                value="{{ user.password_prefix or '' }}" placeholder="Префикс...">
-                            <button class="btn btn-primary rounded-3 px-3 shadow-sm fw-bold" onclick="changePassword({{ user.id }}, false)">⚡ Авто</button>
+
+                        <div class="row g-2 align-items-center" id="autoGroup">
+                            <div class="col">
+                                <input type="text" id="pwdPrefix" class="form-control border-0 glass-card px-3"
+                                    value="{{ user.password_prefix or '' }}" placeholder="Префикс для пароля...">
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-primary px-4 fw-bold shadow-sm rounded-3"
+                                    onclick="changePassword({{ user.id }}, false)">⚡ Авто</button>
+                            </div>
                         </div>
-                        
-                        <div class="input-group d-none" id="manualGroup">
-                            <input type="text" id="manualPwd" class="form-control border-0 bg-transparent" 
-                                placeholder="Введите пароль полностью...">
-                            <button class="btn btn-warning rounded-3 px-3 shadow-sm fw-bold" onclick="changePassword({{ user.id }}, true)">💾 Ок</button>
+
+                        <div class="row g-2 align-items-center d-none" id="manualGroup">
+                            <div class="col">
+                                <input type="text" id="manualPwd" class="form-control border-0 glass-card px-3"
+                                    placeholder="Введите новый пароль...">
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-warning px-4 fw-bold shadow-sm rounded-3 text-dark"
+                                    onclick="changePassword({{ user.id }}, true)">💾 Сменить</button>
+                            </div>
                         </div>
-                        
+
                         <div id="pwdResult" class="mt-2 text-center small"></div>
                     </div>
                 </div>
                 <div class="col-12">
-                    <button class="btn-premium py-3 w-100 d-flex align-items-center justify-content-center gap-3 text-primary border-0" 
-                            onclick="extendPassword({{ user.id }})">
+                    <button
+                        class="btn-premium py-3 w-100 d-flex align-items-center justify-content-center gap-3 text-primary border-0"
+                        onclick="extendPassword({{ user.id }})">
                         <span class="fs-4">⏳</span>
                         <strong>Продлить срок действия пароля на 35 дней</strong>
                     </button>
                 </div>
                 {% else %}
                 <div class="col-12 col-md-8">
-                    <div class="p-3 rounded-4 bg-light small text-muted border border-subtle d-flex align-items-center h-100">
-                        🛡️ Срок действия пароля не ограничен политикой домена. Чтобы сбросить или продлить пароль, сначала сделайте его «обычным» кликом по кнопке слева.
+                    <div
+                        class="p-3 rounded-4 small text-muted border-0 d-flex align-items-center h-100 glass-card">
+                        🛡️ Срок действия пароля не ограничен политикой домена. Чтобы сбросить или продлить пароль,
+                        сначала сделайте его «обычным» кликом по кнопке слева.
                     </div>
                 </div>
                 {% endif %}
-                
+
                 <!-- Статус Аккаунта -->
-                <div class="col-12">
+                <div class="col-12 mt-2">
                     <div class="tool-button-group">
-                        <button class="btn-premium {% if user.is_active %}text-muted{% else %}text-success bg-success-subtle{% endif %}" 
-                                onclick="toggleAccount({{ user.id }})">
+                        <button
+                            class="btn-premium {% if user.is_active %}text-muted{% else %}text-success bg-success-subtle{% endif %} py-2 px-1 small"
+                            onclick="toggleAccount({{ user.id }})">
                             {% if user.is_active %}🚫 Отключить{% else %}✅ Включить{% endif %}
                         </button>
-                        
+
                         {% if ad_info and ad_info.is_locked %}
-                        <button class="btn-premium text-danger bg-danger-subtle fw-bold" onclick="unlockAccount({{ user.id }})">
+                        <button class="btn-premium text-danger bg-danger-subtle py-2 px-1 small fw-bold"
+                            onclick="unlockAccount({{ user.id }})">
                             🔑 Разблокировать
                         </button>
                         {% else %}
-                        <div class="btn-premium text-muted opacity-50 text-center d-flex align-items-center justify-content-center">
+                        <div
+                            class="btn-premium text-muted opacity-50 text-center d-flex align-items-center justify-content-center py-2 px-1 small">
                             🛡️ Не заблокирован
                         </div>
                         {% endif %}
 
                         {% if current_user.is_superadmin %}
-                        <button class="btn-premium text-danger bg-danger-subtle fw-bold" onclick="deleteAdAccount({{ user.id }}, '{{ user.username }}')">
+                        <button class="btn-premium w-100 text-danger border-danger border border-opacity-25"
+                            onclick="deleteAdAccount({{ user.id }}, '{{ user.username }}')">
                             🗑️ Удалить из AD
                         </button>
                         {% endif %}
@@ -203,13 +220,15 @@
                 <h5 class="fw-bold m-0 d-flex align-items-center gap-2">
                     <span class="text-info">🎫</span> История обращений
                 </h5>
-                <span class="badge bg-light text-dark rounded-pill border px-3">{{ user.submitted_tickets|length }}</span>
+                <span class="badge bg-light text-dark rounded-pill border px-3">{{ user.submitted_tickets|length
+                    }}</span>
             </div>
-            
+
             <div class="ticket-history-feed" style="max-height: 500px; overflow-y: auto;">
                 {% for ticket in user.submitted_tickets|reverse %}
                 <div class="ticket-feed-item mb-3">
-                    <a href="{{ url_for('tickets.view', ticket_id=ticket.id) }}" class="ticket-feed-card p-3 d-flex gap-3 align-items-start">
+                    <a href="{{ url_for('tickets.view', ticket_id=ticket.id) }}"
+                        class="ticket-feed-card p-3 d-flex gap-3 align-items-start">
                         <div class="ticket-category-icon glass-card shadow-none">
                             {% set cat = ticket.category.name if ticket.category else 'Другое' %}
                             {% if 'принтер' in cat.lower() %}🖨️
@@ -221,13 +240,15 @@
                         <div class="flex-grow-1 min-width-0">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <span class="fw-bold text-dark text-truncate">{{ cat }}</span>
-                                <span class="badge status-badge-{{ ticket.status_obj.color }} rounded-pill x-small" style="padding: 4px 10px;">{{ ticket.status_obj.name }}</span>
+                                <span class="badge status-badge-{{ ticket.status_obj.color }} rounded-pill x-small"
+                                    style="padding: 4px 10px;">{{ ticket.status_obj.name }}</span>
                             </div>
                             <div class="text-muted small text-truncate-2 mb-2">
                                 {{ ticket.description }}
                             </div>
                             <div class="d-flex align-items-center gap-3">
-                                <span class="text-muted x-small">🕒 {{ ticket.created_at.strftime('%d.%m.%Y, %H:%M') }}</span>
+                                <span class="text-muted x-small">🕒 {{ ticket.created_at.strftime('%d.%m.%Y, %H:%M')
+                                    }}</span>
                                 <span class="text-muted x-small opacity-50">#{{ ticket.id }}</span>
                             </div>
                         </div>
@@ -258,222 +279,228 @@
                     <label class="small text-muted mb-2 fw-semibold">Добавить новую группу</label>
                     <div class="input-group glass-card border-0 p-1" style="background: rgba(0,0,0,0.05);">
                         <span class="input-group-text bg-transparent border-0 pe-0">🔍</span>
-                        <input type="text" id="groupSearchInput" class="form-control bg-transparent border-0 shadow-none" placeholder="Поиск группы..." onkeyup="searchGroups()">
+                        <input type="text" id="groupSearchInput"
+                            class="form-control bg-transparent border-0 shadow-none" placeholder="Поиск группы..."
+                            onkeyup="searchGroups()">
                     </div>
-                    <div id="searchSuggestions" class="list-group mt-2 shadow rounded-3 overflow-hidden" style="display:none; max-height: 200px; overflow-y: auto;"></div>
+                    <div id="searchSuggestions" class="list-group mt-2 shadow rounded-3 overflow-hidden"
+                        style="display:none; max-height: 200px; overflow-y: auto;"></div>
                 </div>
 
                 <label class="small text-muted mb-2 fw-semibold">Уже в группах:</label>
                 <div class="list-group list-group-flush border rounded-4 overflow-hidden shadow-sm">
                     {% if ad_info and ad_info.groups %}
-                        {% for group in ad_info.groups %}
-                        <div class="list-group-item d-flex justify-content-between align-items-center py-2 bg-transparent">
-                            <span class="small fw-medium">{{ group }}</span>
-                            <button class="btn btn-outline-danger btn-sm border-0 py-0 rounded-circle" onclick="removeFromGroup({{ user.id }}, '{{ group }}')" style="width:24px; height:24px;">&times;</button>
-                        </div>
-                        {% endfor %}
+                    {% for group in ad_info.groups %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center py-2 bg-transparent">
+                        <span class="small fw-medium">{{ group }}</span>
+                        <button class="btn btn-outline-danger btn-sm border-0 py-0 rounded-circle"
+                            onclick="removeFromGroup({{ user.id }}, '{{ group }}')"
+                            style="width:24px; height:24px;">&times;</button>
+                    </div>
+                    {% endfor %}
                     {% else %}
-                        <div class="list-group-item text-center py-4 bg-transparent opacity-50">Список пуст</div>
+                    <div class="list-group-item text-center py-4 bg-transparent opacity-50">Список пуст</div>
                     {% endif %}
                 </div>
             </div>
             <div class="modal-footer border-0">
-                <button type="button" class="btn btn-light rounded-3 w-100 py-2 fw-bold" data-bs-dismiss="modal">Готово</button>
+                <button type="button" class="btn btn-light rounded-3 w-100 py-2 fw-bold"
+                    data-bs-dismiss="modal">Готово</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-let searchTimeout;
+    let searchTimeout;
 
-function searchGroups() {
-    clearTimeout(searchTimeout);
-    const query = document.getElementById('groupSearchInput').value.trim();
-    const suggestions = document.getElementById('searchSuggestions');
-    
-    if (query.length < 2) { suggestions.style.display = 'none'; return; }
+    function searchGroups() {
+        clearTimeout(searchTimeout);
+        const query = document.getElementById('groupSearchInput').value.trim();
+        const suggestions = document.getElementById('searchSuggestions');
 
-    searchTimeout = setTimeout(() => {
-        fetch(`/api/tools/search-groups?q=${query}`)
-            .then(r => r.json())
-            .then(data => {
-                suggestions.innerHTML = '';
-                if (data.length > 0) {
-                    data.forEach(group => {
-                        const item = document.createElement('a');
-                        item.href = 'javascript:void(0)';
-                        item.className = 'list-group-item list-group-item-action small py-2 d-flex justify-content-between align-items-center';
-                        item.innerHTML = `<span>📂 ${group.cn}</span> <span class="badge bg-primary rounded-pill">+</span>`;
-                        item.onclick = () => addToGroup({{ user.id }}, group.dn, group.cn);
+        if (query.length < 2) { suggestions.style.display = 'none'; return; }
+
+        searchTimeout = setTimeout(() => {
+            fetch(`/api/tools/search-groups?q=${query}`)
+                .then(r => r.json())
+                .then(data => {
+                    suggestions.innerHTML = '';
+                    if (data.length > 0) {
+                        data.forEach(group => {
+                            const item = document.createElement('a');
+                            item.href = 'javascript:void(0)';
+                            item.className = 'list-group-item list-group-item-action small py-2 d-flex justify-content-between align-items-center';
+                            item.innerHTML = `<span>📂 ${group.cn}</span> <span class="badge bg-primary rounded-pill">+</span>`;
+                            item.onclick = () => addToGroup({{ user.id }}, group.dn, group.cn);
                         suggestions.appendChild(item);
                     });
-                    suggestions.style.display = 'block';
-                } else { suggestions.style.display = 'none'; }
+            suggestions.style.display = 'block';
+        } else { suggestions.style.display = 'none'; }
             });
     }, 300);
 }
 
-function addToGroup(userId, groupDn, groupName) {
-    if (!confirm(`Добавить пользователя в "${groupName}"?`)) return;
-    fetch('/api/tools/add-to-group', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
-        body: JSON.stringify({ user_id: userId, group_dn: groupDn })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) location.reload(); else alert('❌ ' + data.message);
-    });
-}
-
-function removeFromGroup(userId, groupName) {
-    if (!confirm(`Удалить из группы "${groupName}"?`)) return;
-    fetch('/api/tools/remove-from-group', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
-        body: JSON.stringify({ user_id: userId, group_name: groupName })
-    })
-    .then(r => r.json())
-    .then(data => { if (data.success) location.reload(); else alert('❌ ' + data.message); });
-}
-
-function togglePwdMode() {
-    const isManual = document.getElementById('manualMode').checked;
-    document.getElementById('autoGroup').classList.toggle('d-none', isManual);
-    document.getElementById('manualGroup').classList.toggle('d-none', !isManual);
-    document.getElementById('pwdResult').innerHTML = '';
-}
-
-function changePassword(userId, isManual) {
-    const resultDiv = document.getElementById('pwdResult');
-    let payload = { user_id: userId };
-    
-    if (isManual) {
-        const manualPwd = document.getElementById('manualPwd').value.trim();
-        if (!manualPwd) { alert('Введите пароль!'); return; }
-        payload.manual_password = manualPwd;
-    } else {
-        const prefix = document.getElementById('pwdPrefix').value.trim();
-        if (!prefix) { alert('Введите префикс!'); return; }
-        payload.prefix = prefix;
+    function addToGroup(userId, groupDn, groupName) {
+        if (!confirm(`Добавить пользователя в "${groupName}"?`)) return;
+        fetch('/api/tools/add-to-group', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify({ user_id: userId, group_dn: groupDn })
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) location.reload(); else alert('❌ ' + data.message);
+            });
     }
-    
-    resultDiv.style.display = 'block';
-    resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"></div>';
 
-    fetch('/api/tools/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
-        body: JSON.stringify(payload)
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            resultDiv.innerHTML = `<div class="alert alert-success mt-2 py-2 small border-0 shadow-sm rounded-3">✅ Пароль установлен: <b>${data.new_password}</b></div>`;
-        } else {
-            resultDiv.innerHTML = `<div class="alert alert-danger mt-2 py-2 small border-0 shadow-sm rounded-3">❌ ${data.message}</div>`;
-        }
-    });
-}
-
-
-function extendPassword(userId) {
-    if (!confirm('Продлить срок пароля?')) return;
-    fetch('/api/tools/extend-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
-        body: JSON.stringify({ user_id: userId })
-    })
-    .then(r => r.json())
-    .then(data => alert(data.success ? '✅ Пароль продлен' : '❌ ' + data.message));
-}
-
-function toggleAccount(userId) {
-    fetch('/api/tools/toggle-account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
-        body: JSON.stringify({ user_id: userId })
-    })
-    .then(r => r.json())
-    .then(data => data.success ? location.reload() : alert('❌ ' + data.message));
-}
-
-function unlockAccount(userId) {
-    fetch('/api/tools/unlock-account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
-        body: JSON.stringify({ user_id: userId })
-    })
-    .then(r => r.json())
-    .then(data => { alert(data.success ? '✅ Разблокировано' : '❌ ' + data.message); if (data.success) location.reload(); });
-}
-
-function deleteAdAccount(userId, expectedUsername) {
-    const confirmation = prompt(`ВНИМАНИЕ! Это действие навсегда удалит учетную запись.\n\nДля подтверждения введите логин пользователя (${expectedUsername}):`);
-    
-    if (confirmation === null) return; // Нажали Отмена
-    
-    if (confirmation !== expectedUsername) {
-        alert('❌ Логин введен неверно. Удаление отменено во избежание ошибки.');
-        return;
+    function removeFromGroup(userId, groupName) {
+        if (!confirm(`Удалить из группы "${groupName}"?`)) return;
+        fetch('/api/tools/remove-from-group', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify({ user_id: userId, group_name: groupName })
+        })
+            .then(r => r.json())
+            .then(data => { if (data.success) location.reload(); else alert('❌ ' + data.message); });
     }
-    
-    fetch('/api/tools/delete-ad-account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
-        body: JSON.stringify({ user_id: userId })
-    })
-    .then(r => r.json())
-    .then(data => { 
-        alert(data.success ? '✅ Успешно: ' + data.message : '❌ Ошибка: ' + data.message); 
-        if (data.success) window.location.href = "{{ url_for('admin.users') }}"; 
-    });
-}
 
-function togglePasswordExpiration(userId, neverExpires) {
-    const action = neverExpires ? 'сделать пароль БЕССРОЧНЫМ' : 'вернуть ОБЫЧНЫЙ срок действия пароля';
-    if (!confirm(`Вы действительно хотите ${action}?`)) return;
-    
-    fetch('/api/tools/toggle-password-expiration', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
-        body: JSON.stringify({ user_id: userId, never_expires: neverExpires })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
+    function togglePwdMode() {
+        const isManual = document.getElementById('manualMode').checked;
+        document.getElementById('autoGroup').classList.toggle('d-none', isManual);
+        document.getElementById('manualGroup').classList.toggle('d-none', !isManual);
+        document.getElementById('pwdResult').innerHTML = '';
+    }
+
+    function changePassword(userId, isManual) {
+        const resultDiv = document.getElementById('pwdResult');
+        let payload = { user_id: userId };
+
+        if (isManual) {
+            const manualPwd = document.getElementById('manualPwd').value.trim();
+            if (!manualPwd) { alert('Введите пароль!'); return; }
+            payload.manual_password = manualPwd;
         } else {
-            alert('❌ Ошибка: ' + data.message);
+            const prefix = document.getElementById('pwdPrefix').value.trim();
+            if (!prefix) { alert('Введите префикс!'); return; }
+            payload.prefix = prefix;
         }
-    });
-}
+
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"></div>';
+
+        fetch('/api/tools/change-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify(payload)
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    resultDiv.innerHTML = `<div class="alert alert-success mt-2 py-2 small border-0 shadow-sm rounded-3">✅ Пароль установлен: <b>${data.new_password}</b></div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger mt-2 py-2 small border-0 shadow-sm rounded-3">❌ ${data.message}</div>`;
+                }
+            });
+    }
+
+
+    function extendPassword(userId) {
+        if (!confirm('Продлить срок пароля?')) return;
+        fetch('/api/tools/extend-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify({ user_id: userId })
+        })
+            .then(r => r.json())
+            .then(data => alert(data.success ? '✅ Пароль продлен' : '❌ ' + data.message));
+    }
+
+    function toggleAccount(userId) {
+        fetch('/api/tools/toggle-account', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify({ user_id: userId })
+        })
+            .then(r => r.json())
+            .then(data => data.success ? location.reload() : alert('❌ ' + data.message));
+    }
+
+    function unlockAccount(userId) {
+        fetch('/api/tools/unlock-account', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify({ user_id: userId })
+        })
+            .then(r => r.json())
+            .then(data => { alert(data.success ? '✅ Разблокировано' : '❌ ' + data.message); if (data.success) location.reload(); });
+    }
+
+    function deleteAdAccount(userId, expectedUsername) {
+        const confirmation = prompt(`ВНИМАНИЕ! Это действие навсегда удалит учетную запись.\n\nДля подтверждения введите логин пользователя (${expectedUsername}):`);
+
+        if (confirmation === null) return; // Нажали Отмена
+
+        if (confirmation !== expectedUsername) {
+            alert('❌ Логин введен неверно. Удаление отменено во избежание ошибки.');
+            return;
+        }
+
+        fetch('/api/tools/delete-ad-account', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify({ user_id: userId })
+        })
+            .then(r => r.json())
+            .then(data => {
+                alert(data.success ? '✅ Успешно: ' + data.message : '❌ Ошибка: ' + data.message);
+                if (data.success) window.location.href = "{{ url_for('admin.users') }}";
+            });
+    }
+
+    function togglePasswordExpiration(userId, neverExpires) {
+        const action = neverExpires ? 'сделать пароль БЕССРОЧНЫМ' : 'вернуть ОБЫЧНЫЙ срок действия пароля';
+        if (!confirm(`Вы действительно хотите ${action}?`)) return;
+
+        fetch('/api/tools/toggle-password-expiration', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify({ user_id: userId, never_expires: neverExpires })
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('❌ Ошибка: ' + data.message);
+                }
+            });
+    }
 
 </script>
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
         {% if user.computer_name %}
         fetch('/api/tools/ping-pc', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
             body: JSON.stringify({ computer_name: '{{ user.computer_name }}' })
         })
-        .then(r => r.json())
-        .then(data => {
-            const statusBadge = document.getElementById('pcStatus');
-            if (data.online) {
-                statusBadge.className = 'badge bg-success-subtle text-success border border-success shadow-sm';
-                statusBadge.innerHTML = '<span class="status-dot bg-success" style="width:6px;height:6px;box-shadow:none;"></span> В сети';
-            } else {
-                statusBadge.className = 'badge bg-danger-subtle text-danger border border-danger shadow-sm';
-                statusBadge.innerHTML = '<span class="status-dot bg-danger" style="width:6px;height:6px;box-shadow:none;"></span> Недоступен';
-            }
-        }).catch(() => {
-            const statusBadge = document.getElementById('pcStatus');
-            statusBadge.className = 'badge bg-light text-muted border shadow-sm';
-            statusBadge.innerHTML = 'Н/Д';
-        });
+            .then(r => r.json())
+            .then(data => {
+                const statusBadge = document.getElementById('pcStatus');
+                if (data.online) {
+                    statusBadge.className = 'badge bg-success-subtle text-success border border-success shadow-sm';
+                    statusBadge.innerHTML = '<span class="status-dot bg-success" style="width:6px;height:6px;box-shadow:none;"></span> В сети';
+                } else {
+                    statusBadge.className = 'badge bg-danger-subtle text-danger border border-danger shadow-sm';
+                    statusBadge.innerHTML = '<span class="status-dot bg-danger" style="width:6px;height:6px;box-shadow:none;"></span> Недоступен';
+                }
+            }).catch(() => {
+                const statusBadge = document.getElementById('pcStatus');
+                statusBadge.className = 'badge bg-light text-muted border shadow-sm';
+                statusBadge.innerHTML = 'Н/Д';
+            });
         {% endif %}
     });
 </script>
