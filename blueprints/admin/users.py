@@ -86,7 +86,7 @@ def new_ad_user():
         else:
             flash(f'Ошибка: {message}', 'danger')
             
-    return render_template('admin/ad_user_form.html', form=form)
+    return render_template('admin/ad_user_form.html', form=form, settings=settings)
 
 @admin_bp.route('/admin/users/<int:user_id>/edit', methods=['GET', 'POST'])
 @admin_required

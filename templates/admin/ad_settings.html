@@ -20,7 +20,8 @@
                 <div class="row g-3">
                     <div class="col-12">
                         {{ form.server.label(class="form-label") }}
-                        {{ form.server(class="form-control", placeholder="ldap://dc.company.local или ldaps://dc.company.local:636") }}
+                        {{ form.server(class="form-control", placeholder="ldap://dc.company.local или
+                        ldaps://dc.company.local:636") }}
                     </div>
                     <div class="col-12">
                         {{ form.base_dn.label(class="form-label") }}
@@ -28,7 +29,8 @@
                     </div>
                     <div class="col-12">
                         {{ form.bind_user.label(class="form-label") }}
-                        {{ form.bind_user(class="form-control", placeholder="CN=ldap_reader,OU=ServiceAccounts,DC=company,DC=local") }}
+                        {{ form.bind_user(class="form-control",
+                        placeholder="CN=ldap_reader,OU=ServiceAccounts,DC=company,DC=local") }}
                         <div class="form-text">Учётная запись с правами на чтение каталога</div>
                     </div>
                     <div class="col-12">
@@ -46,13 +48,21 @@
                         <div class="form-text">Смещение UTC (напр. 3 для Москвы, 8 для Иркутска)</div>
                     </div>
                     <div class="col-12">
+                        {{ form.ad_modify_mode.label(class="form-label") }}
+                        {{ form.ad_modify_mode(class="form-select custom-select") }}
+                        <div class="form-text">Выберите способ изменения данных в Active Directory. PowerShell
+                            рекомендуется для максимальной совместимости с политиками безопасности.</div>
+                    </div>
+                    <div class="col-12">
                         <div class="form-check form-switch">
                             {{ form.is_active(class="form-check-input") }}
-                            {{ form.is_active.label(class="form-check-label") }}
+                            {{ form.is_active.label(class="form-check-label text-primary fw-bold") }}
                         </div>
-                        <div class="form-text">Если включено — пользователи из AD будут входить по своему AD-паролю (LDAP-аутентификация)</div>
+                        <div class="form-text">Если включено — пользователи из AD будут входить по своему AD-паролю
+                            (LDAP-аутентификация)</div>
                     </div>
                 </div>
+
                 <div class="d-flex gap-2 mt-4">
                     {{ form.submit(class="btn btn-save") }}
                 </div>
@@ -75,7 +85,8 @@
                 </div>
                 <hr class="my-1">
                 <div>
-                    <p class="text-muted small mb-2">Синхронизировать пользователей из AD. Новые пользователи будут созданы с ролью «Сотрудник».</p>
+                    <p class="text-muted small mb-2">Синхронизировать пользователей из AD. Новые пользователи будут
+                        созданы с ролью «Сотрудник».</p>
                     <form method="post" action="{{ url_for('admin.ad_sync') }}"
                         onsubmit="return confirm('Запустить синхронизацию пользователей из Active Directory?');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

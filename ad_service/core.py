@@ -11,13 +11,15 @@ def _get_connection(settings):
     if not settings or not settings.server:
         return None, "Настройки AD не заданы"
     try:
-        server = ldap3.Server(settings.server, use_ssl=False, get_info=ldap3.ALL)
+        # Добавляем таймаут на подключение (3 секунды)
+        server = ldap3.Server(settings.server, use_ssl=False, get_info=ldap3.ALL, connect_timeout=3)
         conn = ldap3.Connection(
             server, 
             user=settings.bind_user, 
             password=settings.bind_password, 
             authentication=ldap3.SIMPLE,
-            auto_bind=False
+            auto_bind=False,
+            receive_timeout=5 # Таймаут на получение данных
         )
         conn.open()
         # Использование StartTLS для безопасности паролей

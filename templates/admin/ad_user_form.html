@@ -58,6 +58,20 @@
                         <div class="form-text small opacity-75">Расположение пользователя в структуре Active Directory
                             (OU/Контейнер)</div>
                     </div>
+
+                    {% if settings.is_exchange_enabled %}
+                    <div class="col-12 pt-3">
+                        <div class="glass-card p-3 border border-warning border-opacity-25" style="background: rgba(255, 193, 7, 0.03);">
+                             <div class="form-check form-switch">
+                                {{ form.create_mailbox(class="form-check-input") }}
+                                {{ form.create_mailbox.label(class="form-check-label fw-bold text-warning small") }}
+                             </div>
+                             <div class="form-text x-small opacity-75 mt-1">
+                                После успешного создания в AD, будет отправлена команда на сервер <b>{{ settings.exchange_server }}</b> для активации почтового ящика.
+                             </div>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
 
                 <div class="d-flex gap-2 mt-4 pt-3 border-top">

@@ -81,6 +81,7 @@
                             <li><a class="dropdown-item" href="{{ url_for('admin.categories') }}">📂 Категории</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('admin.statuses') }}">🏷 Статусы</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('admin.ad_settings') }}">🔗 Active Directory</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.exchange_settings') }}">📧 Настройки Exchange</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('admin.audit_logs') }}">📜 Логи действий</a></li>
                         </ul>
                     </li>
@@ -192,6 +193,17 @@
                     }
                 }
             });
+        });
+
+        // Global loading handler for action buttons
+        document.addEventListener('submit', function (e) {
+            const btn = e.submitter || e.target.querySelector('button[type="submit"]');
+            if (btn && !btn.classList.contains('no-spin')) {
+                btn.classList.add('btn-loading');
+                // Optional: disable other buttons in the same container
+                const siblings = btn.closest('.d-flex, .card, form')?.querySelectorAll('.btn');
+                siblings?.forEach(s => { if (s !== btn) s.classList.add('disabled'); });
+            }
         });
     </script>
 

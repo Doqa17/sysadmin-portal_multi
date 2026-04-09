@@ -103,8 +103,21 @@ class ADSettingsForm(FlaskForm):
     bind_password = PasswordField('Bind Password', validators=[Optional()])
     search_filter = StringField('Фильтр поиска', validators=[Optional(), Length(max=300)])
     timezone_offset = IntegerField('Часовой пояс', default=8, render_kw={'placeholder': 'Например, 3 для МСК'})
-    is_active = BooleanField('Использовать AD для аутентификации')
+    ad_modify_mode = SelectField('Режим записи в AD', choices=[
+        ('ldap', 'Только LDAP (Режим совместимости)'),
+        ('powershell', 'Только PowerShell (Максимальная надежность)'),
+        ('auto', 'Автоматический (PowerShell с откатом на LDAP)')
+    ], default='auto')
+    
+    is_active = BooleanField('Использовать AD для аутентификации', default=True)
     submit = SubmitField('Сохранить')
+
+
+class ExchangeSettingsForm(FlaskForm):
+    is_exchange_enabled = BooleanField('Включить интеграцию с Microsoft Exchange')
+    exchange_server = StringField('Сервер Exchange (FQDN/IP)', validators=[Optional(), Length(max=255)],
+                                  render_kw={'placeholder': 'например, mail.company.local'})
+    submit = SubmitField('Сохранить настройки Exchange')
 
 
 
@@ -119,5 +132,6 @@ class ADUserCreateForm(FlaskForm):
     computer_name = StringField('Имя ПК', validators=[Optional(), Length(max=50)])
     target_ou = SelectField('Расположение (OU / Папка)', validators=[DataRequired()])
     groups_data = HiddenField('Группы')
+    create_mailbox = BooleanField('Создать почтовый ящик в Exchange', default=True)
     submit = SubmitField('Создать пользователя в AD')
 

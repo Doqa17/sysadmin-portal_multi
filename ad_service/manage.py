@@ -1,8 +1,12 @@
 import logging
 import datetime
 from .core import _get_ldap3, _get_connection, _parse_ad_date
+from . import powershell
 
 logger = logging.getLogger(__name__)
+
+def _get_mode(settings):
+    return getattr(settings, 'ad_modify_mode', 'auto').lower()
 
 def sync_users(settings, db, User):
     """Synchronize users from AD to the local database."""
@@ -65,6 +69,17 @@ def sync_users(settings, db, User):
     return created, updated, deactivated, errors
 
 def toggle_ad_account(username, enable, settings):
+    mode = _get_mode(settings)
+    ps_error = None
+    
+    if mode in ['powershell', 'auto']:
+        success, message = powershell.set_account_status(username, enable)
+        if success:
+            return True, f"(PS) {message}"
+        ps_error = message
+        if mode == 'powershell':
+            return False, f"PowerShell Error: {message}"
+
     ldap3 = _get_ldap3()
     if not ldap3 or not settings or not settings.server:
         return False, 'Настройки AD недоступны'
@@ -84,10 +99,13 @@ def toggle_ad_account(username, enable, settings):
         conn.modify(user_dn, {'userAccountControl': [(ldap3.MODIFY_REPLACE, [new_uac])]})
         conn.unbind()
         action = 'включён' if enable else 'отключён'
-        return True, f'Аккаунт успешно {action} в AD'
+        res_msg = f'Аккаунт успешно {action} в AD'
+        if ps_error:
+            res_msg = f"{res_msg} через LDAP (PS ошибка: {ps_error})"
+        return True, res_msg
     except Exception as e:
         logger.error(f'AD toggle account failed for {username}: {e}')
-        return False, f'Ошибка: {str(e)}'
+        return False, f'Ошибка (LDAP): {str(e)}'
 
 def get_user_ad_info(username, settings):
     ldap3 = _get_ldap3()
@@ -125,7 +143,7 @@ def get_user_ad_info(username, settings):
             ll_final_dt = ll_ts_dt
         elif ll_real_dt:
             ll_final_dt = ll_real_dt
-
+        
         if ll_final_dt and ll_final_dt.year > 1601:
             ll_final_dt += tz_delta
             
@@ -174,6 +192,31 @@ def get_ad_containers(settings):
         return []
 
 def create_ad_user(first_name, last_name, username, password, target_ou, groups, settings, email=None, department=None, phone=None, computer_name=None):
+    mode = _get_mode(settings)
+    ps_error = None
+    
+    if mode in ['powershell', 'auto']:
+        # Вычисляем UPN для PowerShell
+        domain_parts = [p for p in settings.base_dn.split(',') if p.lower().startswith('dc=')]
+        domain_name = '.'.join([p.split('=')[1] for p in domain_parts])
+        upn = f"{username}@{domain_name}"
+
+        attrs = {}
+        if email: attrs['mail'] = email
+        if department: attrs['department'] = department
+        if phone: attrs['telephoneNumber'] = phone
+        if computer_name: attrs['physicalDeliveryOfficeName'] = computer_name
+        
+        success, message = powershell.create_user(username, first_name, last_name, password, target_ou, upn, attrs)
+        if success:
+            if groups:
+                for gdn in groups:
+                    powershell.add_to_group(username, gdn)
+            return True, f"(PS) Создан: {username}"
+        ps_error = message
+        if mode == 'powershell':
+            return False, f"PowerShell Error: {message}"
+
     ldap3 = _get_ldap3()
     if not ldap3: return False, "LDAP3 не установлен"
     conn, error = _get_connection(settings)
@@ -207,17 +250,31 @@ def create_ad_user(first_name, last_name, username, password, target_ou, groups,
         if not conn.modify(user_dn, {'unicodePwd': [(ldap3.MODIFY_REPLACE, [ad_pw])]}):
             conn.delete(user_dn)
             conn.unbind()
-            return False, "Пароль не удовлетворяет политикам или нет SSL/TLS."
+            return False, "Пароль не удовлетворяет политикам."
         conn.modify(user_dn, {'userAccountControl': [(ldap3.MODIFY_REPLACE, [512])], 'pwdLastSet': [(ldap3.MODIFY_REPLACE, ["-1"])]})
         if groups:
             for gdn in groups:
                 conn.modify(gdn, {'member': [(ldap3.MODIFY_ADD, [user_dn])]})
         conn.unbind()
-        return True, user_dn
+        res_msg = user_dn
+        if ps_error:
+            res_msg = f"{user_dn} (LDAP, PS ошибка: {ps_error})"
+        return True, res_msg
     except Exception as e:
         return False, str(e)
 
 def delete_ad_user(username, settings):
+    mode = _get_mode(settings)
+    ps_error = None
+    
+    if mode in ['powershell', 'auto']:
+        success, message = powershell.delete_user(username)
+        if success:
+            return True, f"(PS) {message}"
+        ps_error = message
+        if mode == 'powershell':
+            return False, f"PowerShell Error: {message}"
+
     ldap3 = _get_ldap3()
     if not ldap3: return False, "LDAP3 не установлен"
     conn, error = _get_connection(settings)
@@ -230,7 +287,10 @@ def delete_ad_user(username, settings):
         user_dn = str(conn.entries[0].distinguishedName)
         success = conn.delete(user_dn)
         conn.unbind()
-        return success, "Успешно удален" if success else "Ошибка удаления"
+        res_msg = "Успешно удален" if success else "Ошибка удаления"
+        if ps_error:
+            res_msg = f"{res_msg} через LDAP (PS ошибка: {ps_error})"
+        return success, res_msg
     except Exception as e:
         return False, str(e)
 

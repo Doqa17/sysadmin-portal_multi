@@ -65,9 +65,9 @@
                     {% if user.computer_name %}
                     <div class="d-flex align-items-center glass-card p-2 px-3 border border-white border-opacity-10 mb-2" style="background: rgba(255,255,255,0.03);">
                         <code class="fw-bold text-truncate flex-grow-1" 
-                              style="font-size: 0.9em; color: var(--bs-heading-color); cursor: pointer;"
-                              onclick="copySimple('{{ user.computer_name }}', this)"
-                              title="Нажмите, чтобы скопировать">
+                               style="font-size: 0.9em; color: var(--bs-heading-color); cursor: pointer;"
+                               onclick="copySimple('{{ user.computer_name }}', this)"
+                               title="Нажмите, чтобы скопировать">
                             {{ user.computer_name }}
                         </code>
                         <span class="status-dot-ping shadow-sm ms-2" id="pingDot" style="width:7px; height:7px; border-radius:50%; background:#94a3b8; flex-shrink:0;"></span>
@@ -82,13 +82,13 @@
                         </button>
                         <!-- Reboot -->
                         <button class="btn-premium d-flex align-items-center justify-content-center gap-2" 
-                                onclick="powerAction('{{ user.computer_name }}', 'reboot')"
+                                onclick="powerAction('{{ user.computer_name }}', 'reboot', this)"
                                 style="color: var(--bs-secondary-color); --hover-color: #3b82f6;">
                             <span style="opacity: 0.7;">🔄</span> <span class="small fw-bold">Перезагрузка</span>
                         </button>
                         <!-- Shutdown -->
                         <button class="btn-premium d-flex align-items-center justify-content-center gap-2" 
-                                onclick="powerAction('{{ user.computer_name }}', 'shutdown')"
+                                onclick="powerAction('{{ user.computer_name }}', 'shutdown', this)"
                                 style="color: var(--bs-secondary-color); --hover-color: #ef4444;">
                             <span style="opacity: 0.7;">🔌</span> <span class="small fw-bold">Выключение</span>
                         </button>
@@ -134,7 +134,7 @@
             <div class="row g-3">
                 <div class="col-12 col-md-4">
                     <div class="p-3 border-0 rounded-4 text-center cursor-pointer h-100 transition-all hover-shadow glass-card"
-                        onclick="togglePasswordExpiration({{ user.id }}, {{ 'false' if (ad_info and ad_info.pwd_never_expires) else 'true' }})">
+                        onclick="togglePasswordExpiration({{ user.id }}, {{ 'false' if (ad_info and ad_info.pwd_never_expires) else 'true' }}, this)">
                         <span class="fs-4 d-block mb-1">{% if ad_info and ad_info.pwd_never_expires %}🔒{% else %}🔓{%
                             endif %}</span>
                         <div class="fw-bold small text-muted">{% if ad_info and ad_info.pwd_never_expires %}Постоянный
@@ -164,7 +164,7 @@
                             </div>
                             <div class="col-auto">
                                 <button class="btn btn-primary px-4 fw-bold shadow-sm rounded-3"
-                                    onclick="changePassword({{ user.id }}, false)">⚡ Авто</button>
+                                    onclick="changePassword({{ user.id }}, false, this)">⚡ Авто</button>
                             </div>
                         </div>
 
@@ -175,7 +175,7 @@
                             </div>
                             <div class="col-auto">
                                 <button class="btn btn-warning px-4 fw-bold shadow-sm rounded-3 text-dark"
-                                    onclick="changePassword({{ user.id }}, true)">💾 Сменить</button>
+                                    onclick="changePassword({{ user.id }}, true, this)">💾 Сменить</button>
                             </div>
                         </div>
 
@@ -185,7 +185,7 @@
                 <div class="col-12">
                     <button
                         class="btn-premium py-3 w-100 d-flex align-items-center justify-content-center gap-3 text-primary border-0"
-                        onclick="extendPassword({{ user.id }})">
+                        onclick="extendPassword({{ user.id }}, this)">
                         <span class="fs-4">⏳</span>
                         <strong>Продлить срок действия пароля на 35 дней</strong>
                     </button>
@@ -205,13 +205,13 @@
                     <div class="tool-button-group">
                         <button
                             class="btn-premium {% if user.is_active %}text-muted{% else %}text-success bg-success-subtle{% endif %} py-2 px-1 small"
-                            onclick="toggleAccount({{ user.id }})">
+                            onclick="toggleAccount({{ user.id }}, this)">
                             {% if user.is_active %}🚫 Отключить{% else %}✅ Включить{% endif %}
                         </button>
 
                         {% if ad_info and ad_info.is_locked %}
                         <button class="btn-premium text-danger bg-danger-subtle py-2 px-1 small fw-bold"
-                            onclick="unlockAccount({{ user.id }})">
+                            onclick="unlockAccount({{ user.id }}, this)">
                             🔑 Разблокировать
                         </button>
                         {% else %}
@@ -223,7 +223,7 @@
 
                         {% if current_user.is_superadmin %}
                         <button class="btn-premium w-100 text-danger border-danger border border-opacity-25"
-                            onclick="deleteAdAccount({{ user.id }}, '{{ user.username }}')">
+                            onclick="deleteAdAccount({{ user.id }}, '{{ user.username }}', this)">
                             🗑️ Удалить из AD
                         </button>
                         {% endif %}
@@ -258,7 +258,7 @@
                         </div>
                         <div class="flex-grow-1 min-width-0">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="fw-bold text-dark text-truncate">{{ cat }}</span>
+                                <span class="fw-bold text-truncate">{{ cat }}</span>
                                 <span class="badge status-badge-{{ ticket.status_obj.color }} rounded-pill x-small"
                                     style="padding: 4px 10px;">{{ ticket.status_obj.name }}</span>
                             </div>
@@ -313,7 +313,7 @@
                     <div class="list-group-item d-flex justify-content-between align-items-center py-2 bg-transparent">
                         <span class="small fw-medium">{{ group }}</span>
                         <button class="btn btn-outline-danger btn-sm border-0 py-0 rounded-circle"
-                            onclick="removeFromGroup({{ user.id }}, '{{ group }}')"
+                            onclick="removeFromGroup({{ user.id }}, '{{ group }}', this)"
                             style="width:24px; height:24px;">&times;</button>
                     </div>
                     {% endfor %}
@@ -344,7 +344,7 @@
         if (query.length < 2) { suggestions.style.display = 'none'; return; }
 
         searchTimeout = setTimeout(() => {
-            fetch(`/api/tools/search-groups?q=${query}`)
+            fetch(`/api/tools/search-groups?q=${encodeURIComponent(query)}`)
                 .then(r => r.json())
                 .then(data => {
                     suggestions.innerHTML = '';
@@ -354,7 +354,7 @@
                             item.href = 'javascript:void(0)';
                             item.className = 'list-group-item list-group-item-action small py-2 d-flex justify-content-between align-items-center';
                             item.innerHTML = `<span>📂 ${group.cn}</span> <span class="badge bg-primary rounded-pill">+</span>`;
-                            item.onclick = () => addToGroup({{ user.id }}, group.dn, group.cn);
+                            item.onclick = (e) => addToGroup({{ user.id }}, group.dn, group.cn, e.currentTarget);
                             suggestions.appendChild(item);
                         });
                         suggestions.style.display = 'block';
@@ -363,8 +363,9 @@
         }, 300);
     }
 
-    function addToGroup(userId, groupDn, groupName) {
+    function addToGroup(userId, groupDn, groupName, btn) {
         if (!confirm(`Добавить пользователя в "${groupName}"?`)) return;
+        if (btn) btn.classList.add('btn-loading');
         fetch('/api/tools/add-to-group', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
@@ -372,19 +373,24 @@
         })
             .then(r => r.json())
             .then(data => {
-                if (data.success) location.reload(); else alert('❌ ' + data.message);
+                if (data.success) location.reload(); 
+                else { alert('❌ ' + data.message); if(btn) btn.classList.remove('btn-loading'); }
             });
     }
 
-    function removeFromGroup(userId, groupName) {
+    function removeFromGroup(userId, groupName, btn) {
         if (!confirm(`Удалить из группы "${groupName}"?`)) return;
+        if (btn) btn.classList.add('btn-loading');
         fetch('/api/tools/remove-from-group', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
             body: JSON.stringify({ user_id: userId, group_name: groupName })
         })
             .then(r => r.json())
-            .then(data => { if (data.success) location.reload(); else alert('❌ ' + data.message); });
+            .then(data => { 
+                if (data.success) location.reload(); 
+                else { alert('❌ ' + data.message); if(btn) btn.classList.remove('btn-loading'); }
+            });
     }
 
     function togglePwdMode() {
@@ -394,7 +400,7 @@
         document.getElementById('pwdResult').innerHTML = '';
     }
 
-    function changePassword(userId, isManual) {
+    function changePassword(userId, isManual, btn) {
         const resultDiv = document.getElementById('pwdResult');
         let payload = { user_id: userId };
 
@@ -408,8 +414,9 @@
             payload.prefix = prefix;
         }
 
+        if (btn) btn.classList.add('btn-loading');
         resultDiv.style.display = 'block';
-        resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"></div>';
+        resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"></div> Ожидание ответа AD...';
 
         fetch('/api/tools/change-password', {
             method: 'POST',
@@ -418,6 +425,7 @@
         })
             .then(r => r.json())
             .then(data => {
+                if (btn) btn.classList.remove('btn-loading');
                 if (data.success) {
                     resultDiv.innerHTML = `<div class="alert alert-success mt-2 py-2 small border-0 shadow-sm rounded-3">✅ Пароль установлен: <b>${data.new_password}</b></div>`;
                 } else {
@@ -426,38 +434,51 @@
             });
     }
 
-    function extendPassword(userId) {
+    function extendPassword(userId, btn) {
         if (!confirm('Продлить срок пароля?')) return;
+        if (btn) btn.classList.add('btn-loading');
         fetch('/api/tools/extend-password', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
             body: JSON.stringify({ user_id: userId })
         })
             .then(r => r.json())
-            .then(data => alert(data.success ? '✅ Пароль продлен' : '❌ ' + data.message));
+            .then(data => {
+                if (btn) btn.classList.remove('btn-loading');
+                alert(data.success ? '✅ Пароль продлен' : '❌ ' + data.message);
+            });
     }
 
-    function toggleAccount(userId) {
+    function toggleAccount(userId, btn) {
+        if (btn) btn.classList.add('btn-loading');
         fetch('/api/tools/toggle-account', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
             body: JSON.stringify({ user_id: userId })
         })
             .then(r => r.json())
-            .then(data => data.success ? location.reload() : alert('❌ ' + data.message));
+            .then(data => {
+                if (data.success) location.reload(); 
+                else { alert('❌ ' + data.message); if(btn) btn.classList.remove('btn-loading'); }
+            });
     }
 
-    function unlockAccount(userId) {
+    function unlockAccount(userId, btn) {
+        if (btn) btn.classList.add('btn-loading');
         fetch('/api/tools/unlock-account', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
             body: JSON.stringify({ user_id: userId })
         })
             .then(r => r.json())
-            .then(data => { alert(data.success ? '✅ Разблокировано' : '❌ ' + data.message); if (data.success) location.reload(); });
+            .then(data => { 
+                if (btn) btn.classList.remove('btn-loading');
+                alert(data.success ? '✅ Разблокировано' : '❌ ' + data.message); 
+                if (data.success) location.reload(); 
+            });
     }
 
-    function deleteAdAccount(userId, expectedUsername) {
+    function deleteAdAccount(userId, expectedUsername, btn) {
         const confirmation = prompt(`ВНИМАНИЕ! Это действие навсегда удалит учетную запись.\n\nДля подтверждения введите логин пользователя (${expectedUsername}):`);
 
         if (confirmation === null) return; 
@@ -467,6 +488,7 @@
             return;
         }
 
+        if (btn) btn.classList.add('btn-loading');
         fetch('/api/tools/delete-ad-account', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
@@ -474,15 +496,17 @@
         })
             .then(r => r.json())
             .then(data => {
+                if (btn) btn.classList.remove('btn-loading');
                 alert(data.success ? '✅ Успешно: ' + data.message : '❌ Ошибка: ' + data.message);
                 if (data.success) window.location.href = "{{ url_for('admin.users') }}";
             });
     }
 
-    function togglePasswordExpiration(userId, neverExpires) {
+    function togglePasswordExpiration(userId, neverExpires, btn) {
         const action = neverExpires ? 'сделать пароль БЕССРОЧНЫМ' : 'вернуть ОБЫЧНЫЙ срок действия пароля';
         if (!confirm(`Вы действительно хотите ${action}?`)) return;
 
+        if (btn) btn.classList.add('btn-loading');
         fetch('/api/tools/toggle-password-expiration', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
@@ -493,6 +517,7 @@
                 if (data.success) {
                     location.reload();
                 } else {
+                    if (btn) btn.classList.remove('btn-loading');
                     alert('❌ Ошибка: ' + data.message);
                 }
             });
@@ -511,10 +536,11 @@
         });
     }
 
-    function powerAction(computer, action) {
+    function powerAction(computer, action, btn) {
         const actionName = action === 'shutdown' ? 'ВЫКЛЮЧИТЬ' : 'ПЕРЕЗАГРУЗИТЬ';
         if (!confirm(`⚠️ ВНИМАНИЕ: Вы принудительно хотите ${actionName} компьютер ${computer}?\n\nВсе несохраненные данные пользователя будут потеряны.`)) return;
 
+        if (btn) btn.classList.add('btn-loading');
         fetch('/api/tools/power', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
@@ -522,13 +548,17 @@
         })
             .then(r => r.json())
             .then(data => {
+                if (btn) btn.classList.remove('btn-loading');
                 if (data.success) {
                     alert('✅ ' + data.message);
                 } else {
                     alert('❌ ' + data.message);
                 }
             })
-            .catch(err => alert('Ошибка при отправке команды'));
+            .catch(err => {
+                if (btn) btn.classList.remove('btn-loading');
+                alert('Ошибка при отправке команды');
+            });
     }
 
     function pingComputer(computer) {
@@ -536,7 +566,7 @@
         const indicator = document.getElementById('ping-indicator');
         const dot = document.getElementById('pingDot');
 
-        if (btn) btn.disabled = true;
+        if (btn) btn.classList.add('btn-loading');
         if (indicator) indicator.textContent = '⏳';
 
         fetch('/api/tools/ping', {
@@ -546,7 +576,7 @@
         })
             .then(r => r.json())
             .then(data => {
-                if (btn) btn.disabled = false;
+                if (btn) btn.classList.remove('btn-loading');
                 if (data.alive) {
                     if (indicator) indicator.innerHTML = '<span class="badge bg-success">Онлайн</span>';
                     if (dot) dot.style.background = '#10b981';
@@ -556,7 +586,7 @@
                 }
             })
             .catch(() => {
-                if (btn) btn.disabled = false;
+                if (btn) btn.classList.remove('btn-loading');
                 if (indicator) indicator.innerHTML = '<span class="badge bg-secondary">Ошибка</span>';
             });
     }

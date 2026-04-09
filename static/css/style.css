@@ -1001,3 +1001,36 @@ h5, h6 { font-weight: 600; }
     overflow: hidden;
     line-height: 1.5;
 }
+
+/* ===== LOADING STATE ===== */
+.btn-loading {
+    position: relative !important;
+    pointer-events: none !important;
+    opacity: 0.8 !important;
+    color: transparent !important; /* Hide text */
+}
+
+.btn-loading::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-top: -8px;
+    margin-left: -8px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+[data-bs-theme="light"] .btn-outline-primary.btn-loading::after,
+[data-bs-theme="light"] .btn-secondary.btn-loading::after {
+    border-color: rgba(0,0,0,0.1);
+    border-top-color: #3b82f6;
+}

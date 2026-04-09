@@ -1,10 +1,12 @@
 import json
 from models import db, User
 from ad_service import create_ad_user, update_ad_user_info, set_ad_password_never_expires
+from ad_service.exchange import enable_mailbox
 
 def provision_ad_user(form, settings):
     """
     Coordinates creation of a user in AD and then in the local DB.
+    Also handles Exchange mailbox provisioning if requested and enabled.
     Returns (success, message)
     """
     groups_raw = form.groups_data.data
@@ -43,7 +45,23 @@ def provision_ad_user(form, settings):
         )
         db.session.add(user)
         db.session.commit()
-        return True, 'Пользователь успешно создан в Active Directory и базе данных!'
+        
+        main_message = 'Пользователь успешно создан в Active Directory и базе данных!'
+        
+        # Provision Exchange Mailbox if requested
+        if settings.is_exchange_enabled and form.create_mailbox.data:
+            ex_success, ex_msg = enable_mailbox(
+                form.username.data, 
+                settings.exchange_server,
+                admin_user=settings.bind_user,
+                admin_password=settings.bind_password
+            )
+            if ex_success:
+                main_message += f"\n✅ {ex_msg}"
+            else:
+                main_message += f"\n⚠️ Пользователь создан, но почта - нет: {ex_msg}"
+        
+        return True, main_message
     
     return False, result_message
 

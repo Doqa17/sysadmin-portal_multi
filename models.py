@@ -141,6 +141,10 @@ class ADSettings(db.Model):
         default='(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))'
     )
     timezone_offset = db.Column(db.Integer, default=8) # Новое поле для часового пояса
+    ad_modify_mode = db.Column(db.String(20), default='auto') # 'ldap', 'powershell', 'auto'
+    # Exchange Settings
+    is_exchange_enabled = db.Column(db.Boolean, default=False)
+    exchange_server = db.Column(db.String(255))
     is_active = db.Column(db.Boolean, default=False)
 
 
